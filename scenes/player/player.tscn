@@ -6,17 +6,23 @@
 size = Vector2(32, 32)
 
 [node name="Player" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 7
 motion_mode = 1
 script = ExtResource("1_player")
 
 [node name="BodyVisual" type="Polygon2D" parent="."]
-color = Color(0.2, 0.6, 1, 1)
+color = Color(0.18, 0.65, 1, 1)
 polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
 
 [node name="Outline" type="Line2D" parent="."]
 points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16, -16, -16)
 width = 2.0
 default_color = Color(1, 1, 1, 0.9)
+
+[node name="Pointer" type="Polygon2D" parent="."]
+color = Color(1, 1, 1, 0.95)
+polygon = PackedVector2Array(0, -14, -6, -4, 6, -4)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_1")

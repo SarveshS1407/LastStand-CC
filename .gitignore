@@ -1,3 +1,14 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Export presets & builds
+builds/
+exports/
+*.tmp
+*.translation

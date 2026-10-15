@@ -1,19 +1,183 @@
 [gd_scene format=3 uid="uid://gs8p8vpndw8n"]
 
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://scripts/systems/audio_manager.gd" id="1_audio"]
+[ext_resource type="Script" path="res://scripts/systems/game_manager.gd" id="2_gm"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemy/enemy.tscn" id="4_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/collectible/fragment.tscn" id="5_fragment"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
+size = Vector2(1152, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
+size = Vector2(24, 648)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pillar"]
+size = Vector2(64, 64)
 
 [node name="Main" type="Node2D"]
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="AudioManager" type="Node" parent="."]
+script = ExtResource("1_audio")
+
+[node name="GameManager" type="Node" parent="."]
+script = ExtResource("2_gm")
+
+[node name="Environment" type="Node2D" parent="."]
+
+[node name="Floor" type="ColorRect" parent="Environment"]
 offset_right = 1152.0
 offset_bottom = 648.0
 mouse_filter = 2
-color = Color(0.12, 0.13, 0.16, 1)
+color = Color(0.05, 0.06, 0.08, 1)
 
-[node name="ArenaBoundary" type="Line2D" parent="."]
-points = PackedVector2Array(32, 32, 1120, 32, 1120, 616, 32, 616, 32, 32)
+[node name="ArenaBoundsLine" type="Line2D" parent="Environment"]
+points = PackedVector2Array(24, 24, 1128, 24, 1128, 624, 24, 624, 24, 24)
+width = 3.0
+default_color = Color(0.18, 0.28, 0.42, 1)
+
+[node name="CenterGrid" type="Line2D" parent="Environment"]
+points = PackedVector2Array(576, 24, 576, 624)
+width = 1.0
+default_color = Color(0.12, 0.16, 0.24, 0.6)
+
+[node name="CenterGridH" type="Line2D" parent="Environment"]
+points = PackedVector2Array(24, 324, 1128, 324)
+width = 1.0
+default_color = Color(0.12, 0.16, 0.24, 0.6)
+
+[node name="PerimeterWalls" type="StaticBody2D" parent="Environment"]
+collision_layer = 1
+collision_mask = 3
+
+[node name="TopWall" type="CollisionShape2D" parent="Environment/PerimeterWalls"]
+position = Vector2(576, 12)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="BottomWall" type="CollisionShape2D" parent="Environment/PerimeterWalls"]
+position = Vector2(576, 636)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="LeftWall" type="CollisionShape2D" parent="Environment/PerimeterWalls"]
+position = Vector2(12, 324)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="RightWall" type="CollisionShape2D" parent="Environment/PerimeterWalls"]
+position = Vector2(1140, 324)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="Pillars" type="StaticBody2D" parent="Environment"]
+collision_layer = 1
+collision_mask = 3
+
+[node name="PillarTL" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(320, 180)
+shape = SubResource("RectangleShape2D_pillar")
+
+[node name="VisualTL" type="Polygon2D" parent="Environment/Pillars/PillarTL"]
+color = Color(0.14, 0.17, 0.24, 1)
+polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
+[node name="OutlineTL" type="Line2D" parent="Environment/Pillars/PillarTL"]
+points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32, -32, -32)
 width = 2.0
-default_color = Color(0.28, 0.32, 0.4, 1)
+default_color = Color(0.24, 0.35, 0.5, 1)
 
-[node name="Player" parent="." instance=ExtResource("1_player")]
+[node name="PillarTR" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(832, 180)
+shape = SubResource("RectangleShape2D_pillar")
+
+[node name="VisualTR" type="Polygon2D" parent="Environment/Pillars/PillarTR"]
+color = Color(0.14, 0.17, 0.24, 1)
+polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
+[node name="OutlineTR" type="Line2D" parent="Environment/Pillars/PillarTR"]
+points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32, -32, -32)
+width = 2.0
+default_color = Color(0.24, 0.35, 0.5, 1)
+
+[node name="PillarBL" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(320, 468)
+shape = SubResource("RectangleShape2D_pillar")
+
+[node name="VisualBL" type="Polygon2D" parent="Environment/Pillars/PillarBL"]
+color = Color(0.14, 0.17, 0.24, 1)
+polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
+[node name="OutlineBL" type="Line2D" parent="Environment/Pillars/PillarBL"]
+points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32, -32, -32)
+width = 2.0
+default_color = Color(0.24, 0.35, 0.5, 1)
+
+[node name="PillarBR" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(832, 468)
+shape = SubResource("RectangleShape2D_pillar")
+
+[node name="VisualBR" type="Polygon2D" parent="Environment/Pillars/PillarBR"]
+color = Color(0.14, 0.17, 0.24, 1)
+polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
+[node name="OutlineBR" type="Line2D" parent="Environment/Pillars/PillarBR"]
+points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32, -32, -32)
+width = 2.0
+default_color = Color(0.24, 0.35, 0.5, 1)
+
+[node name="Collectibles" type="Node2D" parent="."]
+
+[node name="Core01" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(160, 110)
+
+[node name="Core02" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(576, 95)
+
+[node name="Core03" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(992, 110)
+
+[node name="Core04" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(150, 324)
+
+[node name="Core05" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(460, 324)
+
+[node name="Core06" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(692, 324)
+
+[node name="Core07" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(1002, 324)
+
+[node name="Core08" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(160, 538)
+
+[node name="Core09" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(576, 553)
+
+[node name="Core10" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(992, 538)
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Drone_North" parent="Enemies" instance=ExtResource("4_enemy")]
+position = Vector2(576, 180)
+patrol_axis = Vector2(1, 0)
+patrol_distance = 180.0
+
+[node name="Drone_South" parent="Enemies" instance=ExtResource("4_enemy")]
+position = Vector2(576, 468)
+patrol_axis = Vector2(1, 0)
+patrol_distance = 180.0
+
+[node name="Drone_West" parent="Enemies" instance=ExtResource("4_enemy")]
+position = Vector2(180, 324)
+patrol_axis = Vector2(0, 1)
+patrol_distance = 140.0
+
+[node name="Drone_East" parent="Enemies" instance=ExtResource("4_enemy")]
+position = Vector2(972, 324)
+patrol_axis = Vector2(0, 1)
+patrol_distance = 140.0
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
 position = Vector2(576, 324)
+
+[node name="HUD" parent="." instance=ExtResource("6_hud")]
