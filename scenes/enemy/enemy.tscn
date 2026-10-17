@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://b8enemydrone01"]
+[gd_scene format=3 uid="uid://bopll0qh27i41"]
 
 [ext_resource type="Script" path="res://scripts/enemy/enemy.gd" id="1_enemy"]
 
