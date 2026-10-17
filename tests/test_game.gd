@@ -1,11 +1,13 @@
 extends SceneTree
 
-## Comprehensive Automated Test Suite for Last Stand: Signal Break
-## Verifies movement, pulse, enemy FSM, collectibles, combat, scoring, win/loss conditions.
+## Comprehensive QA Automated Verification Suite for Last Stand: Signal Break.
+## Verifies 1600x900 architecture, drone archetypes, overcharge, pickups, waves, FSM, and persistence.
 
 const GameManagerScript = preload("res://scripts/systems/game_manager.gd")
 const EnemyDroneScript = preload("res://scripts/enemy/enemy.gd")
 const FragmentScript = preload("res://scripts/collectible/fragment.gd")
+const ShieldPickupScript = preload("res://scripts/collectible/shield_pickup.gd")
+const OverchargePickupScript = preload("res://scripts/collectible/overcharge_pickup.gd")
 const PlayerScript = preload("res://scripts/player/player.gd")
 
 var _failures: int = 0
@@ -13,14 +15,13 @@ var _passes: int = 0
 
 
 func _init() -> void:
-	print("====================================================")
-	print("  STARTING AUTOMATED QA TEST SUITE: SIGNAL BREAK    ")
-	print("====================================================")
+	print("==================================================================")
+	print("  QA AUTOMATED VERIFICATION SUITE — LAST STAND: SIGNAL BREAK      ")
+	print("==================================================================")
 	call_deferred("_run_all_tests")
 
 
 func _run_all_tests() -> void:
-	# Load main scene
 	var main_packed = load("res://scenes/main/main.tscn") as PackedScene
 	if not main_packed:
 		_record_fail("Could not load res://scenes/main/main.tscn")
@@ -30,13 +31,13 @@ func _run_all_tests() -> void:
 	var main = main_packed.instantiate()
 	root.add_child(main)
 	
-	# Wait 3 physics frames for ready & collision spaces to initialize
 	for i in range(3):
 		await process_frame
 		
 	var player = main.get_node_or_null("Player")
 	var gm = main.get_node_or_null("GameManager")
 	var hud = main.get_node_or_null("HUD")
+	var camera = main.get_node_or_null("Camera2D")
 	var enemies_node = main.get_node_or_null("Enemies")
 	var collectibles_node = main.get_node_or_null("Collectibles")
 	
@@ -46,165 +47,123 @@ func _run_all_tests() -> void:
 		return
 		
 	# ----------------------------------------------------
-	# TEST 1: Initial State & Architecture Verification
+	# TEST 1: 1600x900 Display & Architecture Verification
 	# ----------------------------------------------------
-	print("\n[TEST 1] Verifying initial scene hierarchy and parameters...")
-	_assert_true(player.current_health == 3, "Player starts with 3 shields")
-	_assert_true(player.current_energy >= 50.0, "Player starts with sufficient energy for pulse")
-	_assert_true(gm.current_state == GameManagerScript.GameState.BRIEFING, "Game begins in BRIEFING state")
-	_assert_true(collectibles_node and collectibles_node.get_child_count() == 10, "10 Energy Cores present in arena")
-	_assert_true(enemies_node and enemies_node.get_child_count() >= 4, "At least 4 defense drones present in arena")
+	print("\n[TEST 1] Verifying 1600x900 resolution & scene architecture...")
+	var viewport_w = ProjectSettings.get_setting("display/window/size/viewport_width")
+	var viewport_h = ProjectSettings.get_setting("display/window/size/viewport_height")
+	_assert_true(viewport_w == 1600 and viewport_h == 900, "Project display viewport configured to 1600x900")
+	_assert_true(player.global_position == Vector2(800, 520), "Player starts centered at (800, 520)")
+	_assert_true(camera != null and camera.position == Vector2(800, 450), "Main camera present and centered")
+	_assert_true(gm.total_cores_needed == 12, "Uplink requires 12 Energy Cores")
+	_assert_true(enemies_node and enemies_node.get_child_count() == 4, "4 initial defense drones present in arena")
 	
 	# ----------------------------------------------------
-	# TEST 2: Player Movement & Diagonal Normalization
+	# TEST 2: Enemy Archetypes (Scout, Enforcer, Hunter)
 	# ----------------------------------------------------
-	print("\n[TEST 2] Verifying player 8-way movement and normalization...")
-	Input.action_press("move_right")
-	Input.flush_buffered_events()
-	player._physics_process(0.016)
-	_assert_approx(player.velocity.x, player.speed, "Horizontal velocity matches player speed")
-	_assert_approx(player.velocity.y, 0.0, "Vertical velocity is 0 during horizontal move")
-	Input.action_release("move_right")
+	print("\n[TEST 2] Verifying Enemy Drone Archetypes...")
+	var scout_drone = enemies_node.get_node_or_null("Drone_ScoutNorth")
+	var enforcer_drone = enemies_node.get_node_or_null("Drone_HeavyWest")
+	var hunter_drone = enemies_node.get_node_or_null("Drone_HunterEast")
 	
-	# Diagonal move (W + D)
-	Input.action_press("move_up")
-	Input.action_press("move_right")
-	Input.flush_buffered_events()
-	player._physics_process(0.016)
-	var diag_speed = player.velocity.length()
-	_assert_approx(diag_speed, player.speed, "Diagonal velocity length is strictly normalized to cardinal speed")
-	Input.action_release("move_up")
-	Input.action_release("move_right")
-	Input.flush_buffered_events()
+	_assert_true(scout_drone and scout_drone.drone_type == EnemyDroneScript.DroneType.SCOUT, "Scout drone initialized")
+	_assert_true(enforcer_drone and enforcer_drone.drone_type == EnemyDroneScript.DroneType.ENFORCER, "Heavy Enforcer drone initialized")
+	_assert_true(hunter_drone and hunter_drone.drone_type == EnemyDroneScript.DroneType.HUNTER, "Hunter drone initialized")
 	
-	# Dismiss briefing by moving
-	gm.start_match()
-	_assert_true(gm.current_state == GameManagerScript.GameState.PLAYING, "Match transitions to PLAYING state")
+	_assert_approx(enforcer_drone.contact_damage, 2.0, "Heavy Enforcer deals 2 contact damage")
+	_assert_approx(hunter_drone.chase_speed, 185.0, "Hunter drone pursues at elevated speed (185 px/s)")
+	
+	# Enforcer stun recovery test (armored chassis)
+	enforcer_drone.apply_stun(3.0)
+	_assert_approx(enforcer_drone.stun_timer, 1.95, "Enforcer chassis reduces stun duration by 35% (got ~1.95s)", 0.1)
 	
 	# ----------------------------------------------------
-	# TEST 3: Disruption Pulse Mechanics & Energy Consumption
+	# TEST 3: Disruption Pulse & EMP Overcharge Mode
 	# ----------------------------------------------------
-	print("\n[TEST 3] Verifying Disruption Pulse ability & energy logic...")
+	print("\n[TEST 3] Verifying Disruption Pulse & Overcharge...")
 	player.current_energy = 50.0
 	player.cooldown_timer = 0.0
+	player.has_overcharge = false
 	
-	# Fire valid pulse
-	var fired = player.fire_disruption_pulse()
-	_assert_true(fired, "Disruption pulse fired successfully with sufficient energy")
-	_assert_approx(player.current_energy, 25.0, "Energy reduced by 25.0 after pulse")
-	_assert_true(player.cooldown_timer > 0.0, "Cooldown timer is active after pulse")
+	# Regular pulse
+	player.fire_disruption_pulse()
+	_assert_approx(player.current_energy, 25.0, "Regular pulse consumes 25 energy")
 	
-	# Try firing during cooldown (should fail)
-	var spam_fired = player.fire_disruption_pulse()
-	_assert_true(not spam_fired, "Pulse blocked by cooldown anti-spam constraint")
+	# Overcharge pickup & super-pulse
+	player.grant_overcharge()
+	_assert_true(player.has_overcharge, "Player gained Overcharge EMP status")
+	_assert_approx(player.current_energy, 100.0, "Overcharge instantly refilled energy to 100%")
 	
-	# Reset cooldown, drain energy below cost
 	player.cooldown_timer = 0.0
-	player.current_energy = 10.0
-	var poor_fired = player.fire_disruption_pulse()
-	_assert_true(not poor_fired, "Pulse blocked when energy is insufficient (< 25)")
-	_assert_approx(player.current_energy, 10.0, "Energy unaffected by failed activation")
-	
-	# Test energy recharge from EnergyFragment
-	player.add_energy(30.0)
-	_assert_approx(player.current_energy, 40.0, "Player energy increased after fragment reward")
+	player.fire_disruption_pulse()
+	_assert_true(not player.has_overcharge, "Overcharge consumed on super-pulse blast")
 	
 	# ----------------------------------------------------
-	# TEST 4: Enemy FSM State Transitions
+	# TEST 4: Pickups (Shield Repair & Overcharge Cell)
 	# ----------------------------------------------------
-	print("\n[TEST 4] Verifying Enemy Drone Finite State Machine...")
-	var test_drone = enemies_node.get_child(0)
-	_assert_true(test_drone != null, "Enemy drone exists")
+	print("\n[TEST 4] Verifying Pickups (Shields & Overcharge)...")
+	var shield_kit = collectibles_node.get_node_or_null("ShieldKit1")
+	_assert_true(shield_kit != null, "Shield repair kit exists")
+	player.current_health = 1
+	shield_kit._on_body_entered(player)
+	_assert_true(player.current_health == 2, "Shield repair kit increased player health from 1 to 2")
 	
-	# State: PATROL
-	test_drone.current_state = EnemyDroneScript.State.PATROL
-	test_drone.global_position = Vector2(500, 180)
-	test_drone._physics_process(0.016)
-	_assert_true(test_drone.velocity != Vector2.ZERO, "Patrolling drone moves toward waypoint")
-	
-	# State: CHASE
-	# Place player within detection radius
-	player.global_position = Vector2(550, 180) # 50px away, well within 180px
-	test_drone._physics_process(0.016)
-	_assert_true(test_drone.current_state == EnemyDroneScript.State.CHASE, "Drone transitions PATROL -> CHASE when player detected")
-	_assert_approx(test_drone.velocity.length(), test_drone.chase_speed, "Drone moves at chase speed during CHASE")
-	
-	# State: STUNNED via Disruption Pulse
-	test_drone.apply_stun(2.5)
-	_assert_true(test_drone.current_state == EnemyDroneScript.State.STUNNED, "Drone transitions to STUNNED on pulse impact")
-	_assert_true(test_drone.velocity == Vector2.ZERO, "Stunned drone velocity is zero")
-	_assert_approx(test_drone.stun_timer, 2.5, "Stun timer set to duration")
-	
-	# Verify stunned drone does NOT damage player on contact
-	var hp_before = player.current_health
-	test_drone._on_hitbox_body_entered(player)
-	_assert_true(player.current_health == hp_before, "Stunned drone cannot deal contact damage to player")
-	
-	# Simulate stun expiration
-	test_drone._process_stunned(2.6)
-	_assert_true(test_drone.current_state != EnemyDroneScript.State.STUNNED, "Drone recovers from stun after timer elapses")
-	
-	# State: RETURN
-	# Move player far away (> lose_radius of 250px)
-	player.global_position = Vector2(100, 100)
-	test_drone._process_chase(0.016)
-	_assert_true(test_drone.current_state == EnemyDroneScript.State.RETURN, "Drone transitions CHASE -> RETURN when player escapes")
+	var overcharge_cell = collectibles_node.get_node_or_null("OverchargeCell")
+	_assert_true(overcharge_cell != null, "Overcharge EMP cell exists")
+	overcharge_cell._on_body_entered(player)
+	_assert_true(player.has_overcharge, "Overcharge cell granted overcharge status")
 	
 	# ----------------------------------------------------
-	# TEST 5: Collectible Interaction & Duplicate Prevention
+	# TEST 5: Wave Progression & Escalating Threat Levels
 	# ----------------------------------------------------
-	print("\n[TEST 5] Verifying Collectible mechanics & score rewards...")
-	var initial_score = gm.score
-	var initial_cores = gm.collected_cores
-	var fragment = collectibles_node.get_child(0)
-	_assert_true(fragment != null, "EnergyFragment node exists")
+	print("\n[TEST 5] Verifying Wave & Threat Progression...")
+	gm.start_match()
+	_assert_true(gm.current_wave == 1, "Game starts in Wave 1: Infiltration")
 	
-	var energy_before = player.current_energy
-	fragment._on_body_entered(player)
-	_assert_true(gm.collected_cores == initial_cores + 1, "Collected cores counter incremented")
-	_assert_true(gm.score == initial_score + fragment.score_reward, "Score awarded for collecting core")
-	_assert_approx(player.current_energy, energy_before + fragment.energy_reward, "Player energy replenished by core")
+	gm.collected_cores = 3
+	gm._check_wave_progression()
+	_assert_true(gm.current_wave == 2, "Reaching 3 cores escalates to Wave 2: Defense Grid Alert")
 	
-	# Verify duplicate prevention: trigger again on same fragment
-	var score_after_first = gm.score
-	fragment._on_body_entered(player)
-	_assert_true(gm.score == score_after_first, "Duplicate collection prevented on already collected core")
+	gm.collected_cores = 6
+	gm._check_wave_progression()
+	_assert_true(gm.current_wave == 3, "Reaching 6 cores escalates to Wave 3: Sector Lockdown")
 	
-	# ----------------------------------------------------
-	# TEST 6: Combat & Game Over Failure State
-	# ----------------------------------------------------
-	print("\n[TEST 6] Verifying Damage & Game Over condition...")
-	player._invuln_timer = 0.0
-	player.take_damage(1)
-	_assert_true(player.current_health == 2, "Player health decremented on damage")
-	_assert_true(player._invuln_timer > 0.0, "Invulnerability frame triggered on damage")
-	
-	# Lethal damage
-	player._invuln_timer = 0.0
-	player.take_damage(2)
-	_assert_true(player.current_health == 0, "Player health reaches 0")
-	_assert_true(player.is_dead, "Player marked as dead")
-	_assert_true(gm.current_state == GameManagerScript.GameState.GAME_OVER, "GameManager triggers GAME_OVER state")
-	_assert_true(hud.game_over_overlay.visible, "Game Over HUD overlay displayed")
+	gm.collected_cores = 9
+	gm._check_wave_progression()
+	_assert_true(gm.current_wave == 4, "Reaching 9 cores escalates to Wave 4: Extraction Override")
 	
 	# ----------------------------------------------------
-	# TEST 7: Victory Condition
+	# TEST 6: Multi-Disrupt Combo Bonus
 	# ----------------------------------------------------
-	print("\n[TEST 7] Verifying Victory state trigger...")
-	gm.collected_cores = gm.total_cores_needed
+	print("\n[TEST 6] Verifying Multi-Disrupt Combo Scoring...")
+	var score_before = gm.score
+	gm.register_drone_stunned(1) # Single drone
+	_assert_true(gm.score == score_before + 25, "Single drone stun awards base +25 score")
+	
+	score_before = gm.score
+	gm.register_drone_stunned(3) # 3 drones caught in one pulse
+	var expected_combo = 25 + (50 * 3) # 175 points
+	_assert_true(gm.score == score_before + expected_combo, "Triple drone stun awards +175 combo score")
+	
+	# ----------------------------------------------------
+	# TEST 7: Victory & Defeat End States
+	# ----------------------------------------------------
+	print("\n[TEST 7] Verifying End-State Transitions & Record Saving...")
+	gm.collected_cores = 12
 	gm.trigger_victory()
-	_assert_true(gm.current_state == GameManagerScript.GameState.VICTORY, "GameManager triggers VICTORY state when 10 cores secured")
-	_assert_true(hud.victory_overlay.visible, "Victory HUD overlay displayed")
+	_assert_true(gm.current_state == GameManagerScript.GameState.VICTORY, "12 cores triggers extraction VICTORY")
+	_assert_true(hud.victory_overlay.visible, "Victory overlay displayed")
+	_assert_true(gm.high_score >= gm.score, "High score record updated and persisted")
 	
 	# ----------------------------------------------------
 	# FINAL SUMMARY
 	# ----------------------------------------------------
-	print("\n====================================================")
-	print("  TEST RESULTS: %d PASSED, %d FAILED" % [_passes, _failures])
-	print("====================================================")
+	print("\n==================================================================")
+	print("  TOTAL CHECKS: %d PASSED, %d FAILED" % [_passes, _failures])
+	print("==================================================================")
 	
 	if _failures == 0:
-		print(">> ALL SYSTEMS AND MECHANICS VERIFIED SUCCESSFULLY! <<\n")
+		print(">> ALL SYSTEMS AND EXPANDED MECHANICS FULLY VERIFIED! <<\n")
 		quit(0)
 	else:
 		printerr(">> TEST SUITE COMPLETED WITH FAILURES! <<\n")

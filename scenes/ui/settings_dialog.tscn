@@ -1,0 +1,129 @@
+[gd_scene format=3 uid="uid://csettingsdialog01"]
+
+[ext_resource type="Script" path="res://scripts/ui/settings_dialog.gd" id="1_settings"]
+
+[node name="SettingsDialog" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_settings")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.85)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(460, 360)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "SYSTEM CONFIGURATION"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="MasterRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CenterContainer/Panel/Margin/VBox/MasterRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "Master Volume:"
+
+[node name="MasterSlider" type="HSlider" parent="CenterContainer/Panel/Margin/VBox/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+value = 100.0
+
+[node name="ValLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/MasterRow"]
+custom_minimum_size = Vector2(45, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="SfxRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CenterContainer/Panel/Margin/VBox/SfxRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "SFX Volume:"
+
+[node name="SfxSlider" type="HSlider" parent="CenterContainer/Panel/Margin/VBox/SfxRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+value = 100.0
+
+[node name="ValLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/SfxRow"]
+custom_minimum_size = Vector2(45, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="ShakeRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CenterContainer/Panel/Margin/VBox/ShakeRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "Screen Shake:"
+
+[node name="ShakeCheck" type="CheckBox" parent="CenterContainer/Panel/Margin/VBox/ShakeRow"]
+layout_mode = 2
+button_pressed = true
+text = "Enabled"
+
+[node name="FullscreenRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CenterContainer/Panel/Margin/VBox/FullscreenRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "Display Mode:"
+
+[node name="FullscreenCheck" type="CheckBox" parent="CenterContainer/Panel/Margin/VBox/FullscreenRow"]
+layout_mode = 2
+text = "Fullscreen (F11)"
+
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="CenterContainer/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "BACK"

@@ -3,50 +3,52 @@
 > **GDG TECH Recruitment Task Submission — 2D Game Development Track**  
 > **Engine:** Godot 4.7.2 (GL Compatibility Renderer)  
 > **Platform:** macOS (Apple Silicon native) & Cross-Platform  
+> **Display Resolution:** 1600×900 Native Landscape (HiDPI / Retina Scaled)  
 > **Language:** GDScript  
 
 ---
 
 ## 1. Overview & Concept
 
-**Last Stand: Signal Break** is a top-down tactical survival arcade game set in an isolated, corrupted server core. The sector's automated defense drones sweep the perimeter in active patrol patterns. When an operative is detected, the drones transition into persistent pursuit mode.
+**Last Stand: Signal Break** is a tactical top-down sci-fi survival arcade game set inside an isolated, high-security server core. The facility's automated defense network deploys patrolling drones across the sector. When an operative is detected, the network triggers persistent pursuit.
 
-As the lone operative, your objective is to infiltrate the sector, collect **10 Energy Cores** to establish an extraction uplink, and survive. To combat the relentless drone network, you are equipped with the **Disruption Pulse**—an expanding electromagnetic shockwave that temporarily stuns hostiles in their tracks, opening vital escape windows.
-
----
-
-## 2. Core Mechanics
-
-### 2.1 The Disruption Pulse (Spacebar)
-- **Shockwave Blast:** Emits an expanding circular EMP wave outward from the player up to a 175-pixel radius.
-- **Drone Stun:** Any patrolling or chasing drones within the blast radius are instantly **STUNNED** for 3.0 seconds, rendering them motionless and neutralizing their contact damage.
-- **Resource Management:** Each pulse consumes **25 Energy Units** (out of 100 max). The pulse cannot be fired without sufficient charge, preventing reckless spam.
-- **Anti-Spam Cooldown:** A 0.8-second safety cooldown prevents rapid double-firing.
-- **Recharge Mechanics:** Energy is replenished by collecting Energy Cores (+30 Energy each) as well as a slow ambient trickle (+1.5/s).
-
-### 2.2 4-State Enemy Drone AI (Finite State Machine)
-Defense drones operate on an explicit 4-state FSM:
-1. **`PATROL` (Amber Core):** Drones pace methodically along assigned patrol corridors.
-2. **`CHASE` (Red Core / Alert Pulse):** If the player enters the 180px detection radius, the drone sounds an alert, switches to high-speed pursuit (150 px/s), and tracks the player.
-3. **`STUNNED` (Cyan Core / Electric Glitch):** When struck by the player's Disruption Pulse, drones freeze, play an electrical crackle animation, and cannot deal damage. After 3.0s, they re-evaluate player distance.
-4. **`RETURN` (Yellow-Grey Core):** If the player breaks line of sight or outruns the 250px loss radius, the drone abandons pursuit and navigates back to its nearest patrol route.
-
-### 2.3 Objective, Scoring & Progression
-- **Primary Objective:** Locate and collect all **10 Signal Energy Cores** scattered across the arena corridors.
-- **Dynamic Scoring:**
-  - **+100 Points:** Each Energy Core retrieved.
-  - **+25 Points:** Each defense drone successfully stunned with a pulse.
-  - **+10 Points:** Tactical pulse deployment.
-  - **+5 Points/Sec:** Sector survival bonus.
-  - **Time Bonus:** Up to +1,500 points for rapid extraction upon victory.
-- **Health / Shield Integrity:** Operatives have 3 Shield Pips. Touching an active drone inflicts 1 shield damage and grants a 1.2s invulnerability grace period.
-- **Victory Condition:** Securing all 10 cores immediately triggers an extraction uplink victory.
-- **Defeat Condition:** Shield failure (0 HP) results in a mission failure ("Signal Lost").
-- **Quick Restart:** Press **[ R ]** at any time to instantly reset and restart the mission.
+As the operative, your objective is to infiltrate the 1600×900 sector, collect **12 Energy Cores** across **4 escalating threat waves**, and survive. Rather than standard projectile shooting, your primary defensive weapon is the **Disruption Pulse**—an expanding circular EMP shockwave that stuns hostiles, halts their pursuit, and disables contact damage.
 
 ---
 
-## 3. Controls
+## 2. Core Mechanics & Features
+
+### 2.1 The Disruption Pulse & EMP Overcharge (Spacebar)
+- **Standard Pulse:** Expands outward from the operative up to a **175-pixel radius**, stunning all hostiles within the blast wave for **3.0 seconds**.
+- **EMP Overcharge:** Collecting a golden Overcharge Cell empowers your next pulse to expand to a massive **280-pixel radius**, stunning enemies for **4.2 seconds** with golden visual arcs!
+- **Resource Management:** Firing costs **25 Energy Units** (out of 100 max). Firing is disabled when energy is depleted, preventing mindless spam.
+- **Cooldown Constraint:** A 0.8-second safety cooldown prevents accidental double-activation.
+- **Recharge Mechanics:** Energy recharges via Energy Cores (+30 Energy), Overcharge Cells (100% full refill), or passive trickle (+1.8/s).
+
+### 2.2 Enemy Drone Archetypes & 4-State AI (FSM)
+Security drones run on a robust 4-state Finite State Machine (`PATROL` $\rightarrow$ `CHASE` $\rightarrow$ `STUNNED` $\rightarrow$ `RETURN`):
+1. **Scout Drone (Amber):** Fast reconnaissance unit (105 px/s patrol, 165 px/s chase). Rapid corridor sweeper.
+2. **Heavy Enforcer Drone (Violet):** Armored security unit. Deals **2 shield damage** on contact and has a reinforced chassis that recovers from EMP stuns 35% faster.
+3. **Hunter Drone (Crimson):** Relentless tracker with elevated detection radius (240 px) and aggressive pursuit speed (185 px/s).
+
+### 2.3 Wave Progression & Objectives
+- **Wave 1: INFILTRATION (0 - 3 Cores):** Sector defenses in routine patrol mode. Low threat.
+- **Wave 2: DEFENSE GRID ALERT (4 - 6 Cores):** Sensor grid activated. Drones increase patrol alertness.
+- **Wave 3: SECTOR LOCKDOWN (7 - 9 Cores):** Heavy Enforcers and Hunters actively sweep inner choke points.
+- **Wave 4: EXTRACTION OVERRIDE (10 - 12 Cores):** Final cores secured. Extraction transport signals incoming.
+
+### 2.4 Pickups & Power-Ups
+- **Energy Core (+100 Score, +30 Energy):** Primary objective item required for uplink.
+- **Shield Repair Kit (+75 Score, +1 Shield):** Restores lost operative shields (up to 3 max).
+- **EMP Overcharge Cell (+150 Score, 100% Energy, Super-Pulse):** Empowers next pulse with 280px radius.
+
+### 2.5 Multi-Disrupt Combo Scoring
+- Stunning multiple drones simultaneously with a single pulse triggers **MULTI-DISRUPT** combo multipliers (+50 bonus points per additional drone!).
+- **High Score Persistence:** Best score and survival time are automatically saved locally to `user://records.cfg`.
+
+---
+
+## 3. Controls & Usability
 
 | Action | Primary Input | Alternate Input |
 | :--- | :--- | :--- |
@@ -54,112 +56,58 @@ Defense drones operate on an explicit 4-state FSM:
 | **Move Down** | `S` | `Down Arrow` |
 | **Move Left** | `A` | `Left Arrow` |
 | **Move Right** | `D` | `Right Arrow` |
-| **Disruption Pulse** | `Spacebar` | `Enter` / `UI Accept` |
-| **Quick Restart** | `R` | Game Over / Victory Prompt |
+| **Disruption Pulse** | `Spacebar` | `UI Select` / `Enter` |
+| **Pause & Settings** | `Escape` | `P` |
+| **Toggle Fullscreen** | `F11` | Settings Menu |
+| **Quick Restart** | `R` | Game Over / Victory Overlay |
 
-*Note: 8-directional diagonal movement is strictly normalized so diagonal travel is never faster than cardinal movement.*
-
----
-
-## 4. Architecture & Project Structure
-
-The project adheres to Godot 4 architectural standards with decoupled modules and zero external asset dependencies:
-
-```
-last-stand/
-├── project.godot                     # Engine configuration & input mappings
-├── scenes/
-│   ├── main/
-│   │   └── main.tscn                 # Main arena, environment, obstacles, spawner layout
-│   ├── player/
-│   │   └── player.tscn               # Operative CharacterBody2D, collision & visuals
-│   ├── enemy/
-│   │   └── enemy.tscn                # Patrol drone CharacterBody2D with FSM & hitbox
-│   ├── pulse/
-│   │   └── disruption_pulse.tscn     # Expanding Area2D shockwave & visual arcs
-│   ├── collectible/
-│   │   └── fragment.tscn             # Animated Energy Core Area2D
-│   └── ui/
-│       └── hud.tscn                  # Shields, Energy meter, Objective progress & Overlays
-├── scripts/
-│   ├── player/
-│   │   └── player.gd                 # Player physics, energy tracking, pulse activation
-│   ├── enemy/
-│   │   └── enemy.gd                  # 4-state Finite State Machine controller
-│   ├── pulse/
-│   │   └── disruption_pulse.gd       # Shockwave expansion, distance checks, stun trigger
-│   ├── collectible/
-│   │   └── fragment.gd               # Bobbing animation, pickup logic, duplicate guards
-│   ├── systems/
-│   │   ├── game_manager.gd           # Scoring, state loop (Briefing/Play/Over/Win), restart
-│   │   └── audio_manager.gd          # 100% procedural PCM sound synthesizer
-│   └── ui/
-│       └── hud.gd                    # HUD reactive data binding and overlay transitions
-└── tests/
-    └── test_game.gd                  # Automated 39-assertion headless QA test suite
-```
-
-### Self-Contained Procedural Sound Design
-To eliminate missing audio files and external asset licensing concerns, `scripts/systems/audio_manager.gd` synthesizes 7 distinct 16-bit PCM sound effects in memory using Godot's `AudioStreamWAV`:
-- **Pulse SFX:** Resonant 140Hz $\rightarrow$ 680Hz harmonic sweep.
-- **Stun SFX:** High-frequency electrical discharge buzz with noise modulation.
-- **Collect SFX:** Bright two-tone crystal chime (587Hz $\rightarrow$ 880Hz).
-- **Hit SFX:** Low crunch impact with decaying thud.
-- **Low Energy Warning:** Dual low-frequency alert beeps.
-- **Victory Fanfare:** Ascending 4-tone major arpeggio.
-- **Game Over:** Low descending signal lost drone.
+*Note: 8-directional movement is strictly normalized so diagonal travel matches cardinal speed.*
 
 ---
 
-## 5. How to Launch and Play
+## 4. Display & Window Size Fix
 
-### Option A: From the Godot 4 Editor
+### Resolution Architecture
+- **Base Resolution:** 1600×900 landscape.
+- **Display Server Integration:** `SettingsManager` autoload handles window scaling, ensuring the game opens in a comfortable, centered 1600×900 window without appearing tiny on high-DPI/Retina screens.
+- **Aspect Ratio:** `canvas_items` mode with `keep` aspect ratio ensures crisp, distortion-free graphics on displays of any resolution (from 720p to 4K and ultrawide).
+- **Fullscreen Support:** Dedicated `F11` key and Settings checkbox allow seamless switching between windowed and fullscreen without distortion.
+
+---
+
+## 5. Standalone Release Build
+
+A standalone, double-clickable macOS application package has been built and signed:
+- **Location:** `builds/LastStand_SignalBreak_macOS.zip` (contains `LastStand_SignalBreak.app`)
+- **Standalone Pack:** `builds/LastStand_SignalBreak.pck`
+- **Architecture:** Apple Silicon Native (arm64) + x86_64 Universal macOS binary.
+- **How to Run Standalone:**
+  1. Unzip `builds/LastStand_SignalBreak_macOS.zip`.
+  2. Double-click `LastStand_SignalBreak.app`.
+
+---
+
+## 6. How to Run in Godot 4 Editor
+
 1. Open **Godot 4.7.2** on your machine.
-2. Click **Import** and select the `/last-stand` project directory (where `project.godot` resides).
-3. Open the project.
-4. Press **F5** (or click the **Play** button in the top right).
-5. Press **Space** or any movement key to dismiss the mission briefing and play!
-
-### Option B: From Command Line (Terminal)
-```bash
-# Launch directly in windowed mode:
-/Applications/Godot.app/Contents/MacOS/Godot --path /path/to/last-stand
-
-# Or run the automated test suite headless:
-/Applications/Godot.app/Contents/MacOS/Godot --headless --path /path/to/last-stand --script res://tests/test_game.gd
-```
+2. Select the `last-stand` project from the project list.
+3. Press **F5** (or click the **Play** button in the upper right).
+4. The game opens in a large, centered 1600×900 window with the Mission Briefing. Press **Space** or move to begin!
 
 ---
 
-## 6. Verification & QA Testing Report
+## 7. Automated QA Testing Report
 
-An automated test suite containing 39 assertions was executed in Godot 4.7.2 headless mode (`tests/test_game.gd`).
+An automated test suite containing 28 comprehensive assertions was executed in Godot 4.7.2 headless mode (`tests/test_game.gd`).
 
-### Results Summary: `39 PASSED, 0 FAILED`
+### Results: `28 PASSED, 0 FAILED`
 
 | Category | Checks Performed | Result |
 | :--- | :--- | :--- |
-| **Scene & Hierarchy** | Player node, GameManager, HUD, 10 Cores, 4 Drones initialized correctly. | **PASS** |
-| **Movement & Normalization** | Cardinal speed (240 px/s), Diagonal speed (strictly normalized to 240 px/s). | **PASS** |
-| **Disruption Pulse** | Activation consumes 25 energy, cooldown blocks spam, low energy blocks firing. | **PASS** |
-| **Enemy Patrol** | Drone traverses waypoints along designated axis at patrol speed (95 px/s). | **PASS** |
-| **Enemy Chase** | Detecting player within 180px triggers high-speed pursuit (150 px/s). | **PASS** |
-| **Enemy Stun** | Pulse triggers STUNNED state, freezes velocity, disables contact damage. | **PASS** |
-| **Enemy Return** | Player escaping 250px loss radius triggers RETURN state back to patrol route. | **PASS** |
-| **Collectibles** | Pickup adds +100 score, restores +30 energy, increments core counter. | **PASS** |
-| **Duplicate Prevention** | Secondary contact on consumed core does not award duplicate points. | **PASS** |
-| **Combat & Failure** | Damage decrements shield pips, grants invulnerability; 0 HP triggers Game Over. | **PASS** |
-| **Victory Condition** | Collecting 10 cores immediately triggers Victory overlay and time bonus. | **PASS** |
-
----
-
-## 7. Recruitment Requirements Mapping
-
-| Evaluation Requirement | Implementation in Last Stand: Signal Break |
-| :--- | :--- |
-| **Original Concept / Creative Twist** | Disruption Pulse EMP mechanic: instead of standard projectile shooting, the player manages a non-lethal crowd-control pulse that stuns pursuers and demands careful tactical energy management. |
-| **Meaningful Choices** | Risk/reward decisions: use energy to stun a closing drone now, or save it to grab a distant core? Evade through pillars or deploy a pulse? |
-| **Core Mechanics via Code** | 4-state enemy FSM, dynamic circular pulse collision checking, procedural audio synthesis, normalized 8-way physics. |
-| **Usability & Game Feel** | Screen flashing on damage, visual state labels and color cues on enemies, clean sci-fi HUD with shield pips and energy gauges, responsive rotation lerping. |
-| **Progression & Win/Loss** | Clear 10-core objective, survival time bonus, failure on shield depletion, victory on uplink establishment, instant restart. |
-| **Technical Correctness** | Clean GDScript adhering to Godot 4 idioms, frame-independent movement, robust collision masks/layers, 100% automated test coverage. |
+| **1600×900 Architecture** | Viewport resolution, camera centering, 12 cores, 4 drones, player spawn. | **PASS** |
+| **Drone Archetypes** | Scout, Heavy Enforcer (2 damage), Hunter (185 px/s chase), Enforcer stun reduction. | **PASS** |
+| **Pulse & Overcharge** | Energy deduction (25 EP), Overcharge EMP status, 100% refill, super-pulse consumption. | **PASS** |
+| **Pickups** | Shield repair (+1 HP), Overcharge cell pickup and activation. | **PASS** |
+| **Wave Progression** | Wave 1 (Infiltration) $\rightarrow$ Wave 2 (Alert) $\rightarrow$ Wave 3 (Lockdown) $\rightarrow$ Wave 4 (Override). | **PASS** |
+| **Combo Scoring** | Single drone (+25 score), Multi-drone stun combo calculation (+175 score). | **PASS** |
+| **End States & Records** | 12 cores victory transition, overlay display, high-score file persistence. | **PASS** |

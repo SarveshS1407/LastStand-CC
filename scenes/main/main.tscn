@@ -5,16 +5,21 @@
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://scenes/enemy/enemy.tscn" id="4_enemy"]
 [ext_resource type="PackedScene" path="res://scenes/collectible/fragment.tscn" id="5_fragment"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
+[ext_resource type="PackedScene" path="res://scenes/collectible/shield_pickup.tscn" id="6_shield"]
+[ext_resource type="PackedScene" path="res://scenes/collectible/overcharge_pickup.tscn" id="7_overcharge"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="8_hud"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
-size = Vector2(1152, 24)
+size = Vector2(1600, 32)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
-size = Vector2(24, 648)
+size = Vector2(32, 900)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pillar"]
-size = Vector2(64, 64)
+size = Vector2(72, 72)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_divider"]
+size = Vector2(32, 120)
 
 [node name="Main" type="Node2D"]
 
@@ -23,161 +28,209 @@ script = ExtResource("1_audio")
 
 [node name="GameManager" type="Node" parent="."]
 script = ExtResource("2_gm")
+total_cores_needed = 12
+
+[node name="Camera2D" type="Camera2D" parent="." groups=["main_camera"]]
+position = Vector2(800, 450)
+enabled = true
 
 [node name="Environment" type="Node2D" parent="."]
 
 [node name="Floor" type="ColorRect" parent="Environment"]
-offset_right = 1152.0
-offset_bottom = 648.0
+offset_right = 1600.0
+offset_bottom = 900.0
 mouse_filter = 2
-color = Color(0.05, 0.06, 0.08, 1)
+color = Color(0.04, 0.05, 0.07, 1)
 
 [node name="ArenaBoundsLine" type="Line2D" parent="Environment"]
-points = PackedVector2Array(24, 24, 1128, 24, 1128, 624, 24, 624, 24, 24)
-width = 3.0
-default_color = Color(0.18, 0.28, 0.42, 1)
+points = PackedVector2Array(32, 32, 1568, 32, 1568, 868, 32, 868, 32, 32)
+width = 3.5
+default_color = Color(0.18, 0.28, 0.44, 1)
 
-[node name="CenterGrid" type="Line2D" parent="Environment"]
-points = PackedVector2Array(576, 24, 576, 624)
+[node name="CenterGridV" type="Line2D" parent="Environment"]
+points = PackedVector2Array(800, 32, 800, 868)
 width = 1.0
-default_color = Color(0.12, 0.16, 0.24, 0.6)
+default_color = Color(0.1, 0.15, 0.22, 0.5)
 
 [node name="CenterGridH" type="Line2D" parent="Environment"]
-points = PackedVector2Array(24, 324, 1128, 324)
+points = PackedVector2Array(32, 450, 1568, 450)
 width = 1.0
-default_color = Color(0.12, 0.16, 0.24, 0.6)
+default_color = Color(0.1, 0.15, 0.22, 0.5)
 
 [node name="PerimeterWalls" type="StaticBody2D" parent="Environment"]
 collision_layer = 1
-collision_mask = 3
+collision_mask = 7
 
 [node name="TopWall" type="CollisionShape2D" parent="Environment/PerimeterWalls"]
-position = Vector2(576, 12)
+position = Vector2(800, 16)
 shape = SubResource("RectangleShape2D_wall_h")
 
 [node name="BottomWall" type="CollisionShape2D" parent="Environment/PerimeterWalls"]
-position = Vector2(576, 636)
+position = Vector2(800, 884)
 shape = SubResource("RectangleShape2D_wall_h")
 
 [node name="LeftWall" type="CollisionShape2D" parent="Environment/PerimeterWalls"]
-position = Vector2(12, 324)
+position = Vector2(16, 450)
 shape = SubResource("RectangleShape2D_wall_v")
 
 [node name="RightWall" type="CollisionShape2D" parent="Environment/PerimeterWalls"]
-position = Vector2(1140, 324)
+position = Vector2(1584, 450)
 shape = SubResource("RectangleShape2D_wall_v")
 
 [node name="Pillars" type="StaticBody2D" parent="Environment"]
 collision_layer = 1
-collision_mask = 3
+collision_mask = 7
 
-[node name="PillarTL" type="CollisionShape2D" parent="Environment/Pillars"]
-position = Vector2(320, 180)
+[node name="PillarNW" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(420, 240)
 shape = SubResource("RectangleShape2D_pillar")
 
-[node name="VisualTL" type="Polygon2D" parent="Environment/Pillars/PillarTL"]
-color = Color(0.14, 0.17, 0.24, 1)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+[node name="VisualNW" type="Polygon2D" parent="Environment/Pillars/PillarNW"]
+color = Color(0.12, 0.16, 0.22, 1)
+polygon = PackedVector2Array(-36, -36, 36, -36, 36, 36, -36, 36)
 
-[node name="OutlineTL" type="Line2D" parent="Environment/Pillars/PillarTL"]
-points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32, -32, -32)
+[node name="OutlineNW" type="Line2D" parent="Environment/Pillars/PillarNW"]
+points = PackedVector2Array(-36, -36, 36, -36, 36, 36, -36, 36, -36, -36)
 width = 2.0
-default_color = Color(0.24, 0.35, 0.5, 1)
+default_color = Color(0.25, 0.38, 0.55, 1)
 
-[node name="PillarTR" type="CollisionShape2D" parent="Environment/Pillars"]
-position = Vector2(832, 180)
+[node name="PillarNE" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(1180, 240)
 shape = SubResource("RectangleShape2D_pillar")
 
-[node name="VisualTR" type="Polygon2D" parent="Environment/Pillars/PillarTR"]
-color = Color(0.14, 0.17, 0.24, 1)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+[node name="VisualNE" type="Polygon2D" parent="Environment/Pillars/PillarNE"]
+color = Color(0.12, 0.16, 0.22, 1)
+polygon = PackedVector2Array(-36, -36, 36, -36, 36, 36, -36, 36)
 
-[node name="OutlineTR" type="Line2D" parent="Environment/Pillars/PillarTR"]
-points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32, -32, -32)
+[node name="OutlineNE" type="Line2D" parent="Environment/Pillars/PillarNE"]
+points = PackedVector2Array(-36, -36, 36, -36, 36, 36, -36, 36, -36, -36)
 width = 2.0
-default_color = Color(0.24, 0.35, 0.5, 1)
+default_color = Color(0.25, 0.38, 0.55, 1)
 
-[node name="PillarBL" type="CollisionShape2D" parent="Environment/Pillars"]
-position = Vector2(320, 468)
+[node name="PillarSW" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(420, 660)
 shape = SubResource("RectangleShape2D_pillar")
 
-[node name="VisualBL" type="Polygon2D" parent="Environment/Pillars/PillarBL"]
-color = Color(0.14, 0.17, 0.24, 1)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+[node name="VisualSW" type="Polygon2D" parent="Environment/Pillars/PillarSW"]
+color = Color(0.12, 0.16, 0.22, 1)
+polygon = PackedVector2Array(-36, -36, 36, -36, 36, 36, -36, 36)
 
-[node name="OutlineBL" type="Line2D" parent="Environment/Pillars/PillarBL"]
-points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32, -32, -32)
+[node name="OutlineSW" type="Line2D" parent="Environment/Pillars/PillarSW"]
+points = PackedVector2Array(-36, -36, 36, -36, 36, 36, -36, 36, -36, -36)
 width = 2.0
-default_color = Color(0.24, 0.35, 0.5, 1)
+default_color = Color(0.25, 0.38, 0.55, 1)
 
-[node name="PillarBR" type="CollisionShape2D" parent="Environment/Pillars"]
-position = Vector2(832, 468)
+[node name="PillarSE" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(1180, 660)
 shape = SubResource("RectangleShape2D_pillar")
 
-[node name="VisualBR" type="Polygon2D" parent="Environment/Pillars/PillarBR"]
-color = Color(0.14, 0.17, 0.24, 1)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+[node name="VisualSE" type="Polygon2D" parent="Environment/Pillars/PillarSE"]
+color = Color(0.12, 0.16, 0.22, 1)
+polygon = PackedVector2Array(-36, -36, 36, -36, 36, 36, -36, 36)
 
-[node name="OutlineBR" type="Line2D" parent="Environment/Pillars/PillarBR"]
-points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32, -32, -32)
+[node name="OutlineSE" type="Line2D" parent="Environment/Pillars/PillarSE"]
+points = PackedVector2Array(-36, -36, 36, -36, 36, 36, -36, 36, -36, -36)
 width = 2.0
-default_color = Color(0.24, 0.35, 0.5, 1)
+default_color = Color(0.25, 0.38, 0.55, 1)
+
+[node name="DividerL" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(640, 450)
+shape = SubResource("RectangleShape2D_divider")
+
+[node name="VisualDivL" type="Polygon2D" parent="Environment/Pillars/DividerL"]
+color = Color(0.12, 0.16, 0.22, 1)
+polygon = PackedVector2Array(-16, -60, 16, -60, 16, 60, -16, 60)
+
+[node name="OutlineDivL" type="Line2D" parent="Environment/Pillars/DividerL"]
+points = PackedVector2Array(-16, -60, 16, -60, 16, 60, -16, 60, -16, -60)
+width = 2.0
+default_color = Color(0.25, 0.38, 0.55, 1)
+
+[node name="DividerR" type="CollisionShape2D" parent="Environment/Pillars"]
+position = Vector2(960, 450)
+shape = SubResource("RectangleShape2D_divider")
+
+[node name="VisualDivR" type="Polygon2D" parent="Environment/Pillars/DividerR"]
+color = Color(0.12, 0.16, 0.22, 1)
+polygon = PackedVector2Array(-16, -60, 16, -60, 16, 60, -16, 60)
+
+[node name="OutlineDivR" type="Line2D" parent="Environment/Pillars/DividerR"]
+points = PackedVector2Array(-16, -60, 16, -60, 16, 60, -16, 60, -16, -60)
+width = 2.0
+default_color = Color(0.25, 0.38, 0.55, 1)
 
 [node name="Collectibles" type="Node2D" parent="."]
 
 [node name="Core01" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(160, 110)
+position = Vector2(200, 140)
 
 [node name="Core02" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(576, 95)
+position = Vector2(800, 120)
 
 [node name="Core03" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(992, 110)
+position = Vector2(1400, 140)
 
 [node name="Core04" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(150, 324)
+position = Vector2(180, 450)
 
 [node name="Core05" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(460, 324)
+position = Vector2(530, 340)
 
 [node name="Core06" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(692, 324)
+position = Vector2(1070, 340)
 
 [node name="Core07" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(1002, 324)
+position = Vector2(1420, 450)
 
 [node name="Core08" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(160, 538)
+position = Vector2(530, 560)
 
 [node name="Core09" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(576, 553)
+position = Vector2(1070, 560)
 
 [node name="Core10" parent="Collectibles" instance=ExtResource("5_fragment")]
-position = Vector2(992, 538)
+position = Vector2(200, 760)
+
+[node name="Core11" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(800, 780)
+
+[node name="Core12" parent="Collectibles" instance=ExtResource("5_fragment")]
+position = Vector2(1400, 760)
+
+[node name="ShieldKit1" parent="Collectibles" instance=ExtResource("6_shield")]
+position = Vector2(200, 280)
+
+[node name="ShieldKit2" parent="Collectibles" instance=ExtResource("6_shield")]
+position = Vector2(1400, 620)
+
+[node name="OverchargeCell" parent="Collectibles" instance=ExtResource("7_overcharge")]
+position = Vector2(800, 450)
 
 [node name="Enemies" type="Node2D" parent="."]
 
-[node name="Drone_North" parent="Enemies" instance=ExtResource("4_enemy")]
-position = Vector2(576, 180)
+[node name="Drone_ScoutNorth" parent="Enemies" instance=ExtResource("4_enemy")]
+position = Vector2(800, 240)
 patrol_axis = Vector2(1, 0)
-patrol_distance = 180.0
+patrol_distance = 250.0
 
-[node name="Drone_South" parent="Enemies" instance=ExtResource("4_enemy")]
-position = Vector2(576, 468)
+[node name="Drone_ScoutSouth" parent="Enemies" instance=ExtResource("4_enemy")]
+position = Vector2(800, 660)
 patrol_axis = Vector2(1, 0)
-patrol_distance = 180.0
+patrol_distance = 250.0
 
-[node name="Drone_West" parent="Enemies" instance=ExtResource("4_enemy")]
-position = Vector2(180, 324)
+[node name="Drone_HeavyWest" parent="Enemies" instance=ExtResource("4_enemy")]
+position = Vector2(240, 450)
+drone_type = 1
 patrol_axis = Vector2(0, 1)
-patrol_distance = 140.0
+patrol_distance = 200.0
 
-[node name="Drone_East" parent="Enemies" instance=ExtResource("4_enemy")]
-position = Vector2(972, 324)
+[node name="Drone_HunterEast" parent="Enemies" instance=ExtResource("4_enemy")]
+position = Vector2(1360, 450)
+drone_type = 2
 patrol_axis = Vector2(0, 1)
-patrol_distance = 140.0
+patrol_distance = 200.0
 
 [node name="Player" parent="." instance=ExtResource("3_player")]
-position = Vector2(576, 324)
+position = Vector2(800, 520)
 
-[node name="HUD" parent="." instance=ExtResource("6_hud")]
+[node name="HUD" parent="." instance=ExtResource("8_hud")]
