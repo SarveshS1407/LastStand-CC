@@ -5,7 +5,7 @@ extends CharacterBody2D
 ## and a 4-state Finite State Machine: PATROL -> CHASE -> STUNNED -> RETURN.
 
 enum State { PATROL, CHASE, STUNNED, RETURN }
-enum DroneType { SCOUT, ENFORCER, HUNTER }
+enum DroneType { SCOUT, ENFORCER, HUNTER, ELITE_ENFORCER, STALKER, OVERMIND }
 
 @export var drone_type: DroneType = DroneType.SCOUT
 @export var patrol_points: Array = []
@@ -78,6 +78,30 @@ func _configure_archetype() -> void:
 			contact_damage = 1
 			color_patrol = Color(0.95, 0.25, 0.35, 1.0) # Crimson
 			scale = Vector2(0.9, 0.9)
+		DroneType.ELITE_ENFORCER:
+			patrol_speed = 85.0
+			chase_speed = 135.0
+			detection_radius = 220.0
+			lose_radius = 300.0
+			contact_damage = 3 # Devastating heavy contact
+			color_patrol = Color(0.9, 0.3, 1.0, 1.0) # Electric Violet
+			scale = Vector2(1.5, 1.5)
+		DroneType.STALKER:
+			patrol_speed = 130.0
+			chase_speed = 205.0 # Lethal pursuit speed
+			detection_radius = 280.0
+			lose_radius = 360.0
+			contact_damage = 1
+			color_patrol = Color(1.0, 0.15, 0.35, 1.0) # Neon Laser Red
+			scale = Vector2(0.85, 0.85)
+		DroneType.OVERMIND:
+			patrol_speed = 70.0
+			chase_speed = 115.0
+			detection_radius = 340.0
+			lose_radius = 440.0
+			contact_damage = 3
+			color_patrol = Color(1.0, 0.8, 0.1, 1.0) # Radiant Gold Titan
+			scale = Vector2(2.2, 2.2)
 
 
 func _find_player() -> void:
@@ -193,6 +217,10 @@ func apply_stun(duration: float) -> void:
 	var final_dur := duration
 	if drone_type == DroneType.ENFORCER:
 		final_dur *= 0.65 # Armored chassis recovers faster
+	elif drone_type == DroneType.ELITE_ENFORCER:
+		final_dur *= 0.50 # Heavy plating shrugs off 50% EMP
+	elif drone_type == DroneType.OVERMIND:
+		final_dur *= 0.40 # Titan Overmind absorbs 60% EMP shock
 	current_state = State.STUNNED
 	stun_timer = final_dur
 	velocity = Vector2.ZERO
@@ -205,6 +233,9 @@ func _update_visuals() -> void:
 		DroneType.SCOUT: type_prefix = "SCOUT: "
 		DroneType.ENFORCER: type_prefix = "HEAVY: "
 		DroneType.HUNTER: type_prefix = "HUNTER: "
+		DroneType.ELITE_ENFORCER: type_prefix = "ELITE: "
+		DroneType.STALKER: type_prefix = "STALKER: "
+		DroneType.OVERMIND: type_prefix = "TITAN: "
 		
 	match current_state:
 		State.PATROL:

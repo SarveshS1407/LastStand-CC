@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="2_pause"]
+[ext_resource type="PackedScene" path="res://scenes/ui/level_select.tscn" id="3_level_select"]
 
 [node name="HUD" type="CanvasLayer"]
 process_mode = 3
@@ -64,17 +65,24 @@ layout_mode = 2
 mouse_filter = 2
 alignment = 1
 
+[node name="LevelBadge" type="Label" parent="MarginContainer/TopBar/CenterPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "MISSION 01: BREACH POINT"
+horizontal_alignment = 1
+
 [node name="WaveLabel" type="Label" parent="MarginContainer/TopBar/CenterPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.75, 0.3, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "THREAT LEVEL 1: INFILTRATION"
 horizontal_alignment = 1
 
 [node name="ComboLabel" type="Label" parent="MarginContainer/TopBar/CenterPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "MULTI-DISRUPT x2! +50"
 horizontal_alignment = 1
 
@@ -151,7 +159,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.03, 0.04, 0.06, 0.9)
+color = Color(0.03, 0.04, 0.06, 0.92)
 
 [node name="CenterContainer" type="CenterContainer" parent="Overlays/BriefingOverlay"]
 layout_mode = 1
@@ -162,19 +170,19 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Overlays/BriefingOverlay/CenterContainer"]
-custom_minimum_size = Vector2(620, 420)
+custom_minimum_size = Vector2(660, 460)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Overlays/BriefingOverlay/CenterContainer/Panel"]
 layout_mode = 2
 theme_override_constants/margin_left = 36
-theme_override_constants/margin_top = 32
+theme_override_constants/margin_top = 28
 theme_override_constants/margin_right = 36
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_bottom = 28
 
 [node name="VBox" type="VBoxContainer" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="Title" type="Label" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2
@@ -186,8 +194,8 @@ horizontal_alignment = 1
 [node name="Subtitle" type="Label" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
-theme_override_font_sizes/font_size = 12
-text = "SUB-SURFACE SECTOR INFILTRATION & EXTRACTION PROTOCOL"
+theme_override_font_sizes/font_size = 13
+text = "SECTOR MISSION BRIEFING"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox"]
@@ -197,22 +205,16 @@ layout_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.9, 0.95, 1)
 theme_override_font_sizes/font_size = 13
-text = "MISSION PARAMETERS:
-• Infiltrate the 1600x900 sector and collect 12 Energy Cores to establish extraction uplink.
-• Automated defense drones sweep the perimeter in 4 escalating threat waves.
-• Scout Drones (Amber) pace fast corridors. Heavy Enforcers (Violet) deal 2 damage.
-• Hunter Drones (Crimson) relentlessly pursue once alerted.
-
-DISRUPTION PULSE [SPACE]:
-• Emits an expanding circular EMP shockwave.
-• Stuns all hostiles in radius. Stunned drones cannot move or harm you.
-• Costs 25 Energy. Grab green cores, blue shield repair kits, and gold EMP overcharge cells!
+text = "MISSION OBJECTIVE:
+• Infiltrate sector perimeter and secure required Energy Cores.
+• Evade and neutralize automated security drones with Disruption Pulse.
+• Blue shield kits restore health. Gold overcharge cells boost EMP radius!
 
 CONTROLS:
-• WASD / Arrow Keys: 8-Way Movement
-• SPACE: Disruption Pulse
-• ESC: Pause & System Configuration
-• F11: Toggle Fullscreen"
+• WASD / Arrows / Touch: 8-Way Movement
+• SPACE / Pulse Button: Disruption Pulse
+• ESC / Pause Button: Pause & Settings"
+autowrap_mode = 2
 
 [node name="HSeparator2" type="HSeparator" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2
@@ -220,9 +222,24 @@ layout_mode = 2
 [node name="StartPrompt" type="Label" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 1, 0.55, 1)
-theme_override_font_sizes/font_size = 15
-text = "[ TAP SCREEN, PRESS SPACE, OR MOVE TO INITIATE ]"
+theme_override_font_sizes/font_size = 14
+text = "[ TAP SCREEN, MOVE, OR SELECT OPTION BELOW ]"
 horizontal_alignment = 1
+
+[node name="BriefingActions" type="HBoxContainer" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="StartMissionBtn" type="Button" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox/BriefingActions"]
+custom_minimum_size = Vector2(190, 42)
+layout_mode = 2
+text = "START MISSION ▶"
+
+[node name="MissionSelectBtn" type="Button" parent="Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox/BriefingActions"]
+custom_minimum_size = Vector2(190, 42)
+layout_mode = 2
+text = "MISSION SELECT ☰"
 
 [node name="GameOverOverlay" type="ColorRect" parent="Overlays"]
 visible = false
@@ -232,7 +249,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.08, 0.02, 0.03, 0.92)
+color = Color(0.08, 0.02, 0.03, 0.94)
 
 [node name="CenterContainer" type="CenterContainer" parent="Overlays/GameOverOverlay"]
 layout_mode = 1
@@ -243,33 +260,60 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Overlays/GameOverOverlay/CenterContainer"]
-custom_minimum_size = Vector2(500, 300)
+custom_minimum_size = Vector2(560, 360)
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Overlays/GameOverOverlay/CenterContainer/Panel"]
+[node name="Margin" type="MarginContainer" parent="Overlays/GameOverOverlay/CenterContainer/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
 
-[node name="Title" type="Label" parent="Overlays/GameOverOverlay/CenterContainer/Panel/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Overlays/GameOverOverlay/CenterContainer/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.25, 0.25, 1)
 theme_override_font_sizes/font_size = 26
 text = "SIGNAL TERMINATED"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Overlays/GameOverOverlay/CenterContainer/Panel/VBoxContainer"]
+[node name="Subtitle" type="Label" parent="Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.75, 0.75, 1)
 theme_override_font_sizes/font_size = 13
 text = "Operative shields compromised. Sector defenses remain active."
 horizontal_alignment = 1
 
-[node name="SummaryLabel" type="Label" parent="Overlays/GameOverOverlay/CenterContainer/Panel/VBoxContainer"]
+[node name="SummaryLabel" type="Label" parent="Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 14
-text = "CORES SECURED: 0 / 12\nTIME SURVIVED: 00:00\nFINAL SCORE: 0\n\nPRESS [ R ] TO RETRY   •   ESC: MENU"
+text = "CORES SECURED: 0 / 12
+TIME SURVIVED: 00:00
+FINAL SCORE: 0"
 horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
+layout_mode = 2
+
+[node name="GameOverActions" type="HBoxContainer" parent="Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 18
+
+[node name="RetryBtn" type="Button" parent="Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer/GameOverActions"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+text = "RETRY MISSION ⟳"
+
+[node name="SelectMissionBtn" type="Button" parent="Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer/GameOverActions"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+text = "MISSION SELECT ☰"
 
 [node name="VictoryOverlay" type="ColorRect" parent="Overlays"]
 visible = false
@@ -279,7 +323,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.02, 0.08, 0.08, 0.92)
+color = Color(0.02, 0.08, 0.08, 0.94)
 
 [node name="CenterContainer" type="CenterContainer" parent="Overlays/VictoryOverlay"]
 layout_mode = 1
@@ -290,33 +334,82 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Overlays/VictoryOverlay/CenterContainer"]
-custom_minimum_size = Vector2(520, 300)
+custom_minimum_size = Vector2(620, 420)
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Overlays/VictoryOverlay/CenterContainer/Panel"]
+[node name="Margin" type="MarginContainer" parent="Overlays/VictoryOverlay/CenterContainer/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
 
-[node name="Title" type="Label" parent="Overlays/VictoryOverlay/CenterContainer/Panel/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.25, 0.95, 0.7, 1)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "EXTRACTION UPLINK ESTABLISHED"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Overlays/VictoryOverlay/CenterContainer/Panel/VBoxContainer"]
+[node name="Subtitle" type="Label" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.9, 0.85, 1)
 theme_override_font_sizes/font_size = 13
 text = "All signal fragments secured. Evacuation transport inbound."
 horizontal_alignment = 1
 
-[node name="SummaryLabel" type="Label" parent="Overlays/VictoryOverlay/CenterContainer/Panel/VBoxContainer"]
+[node name="StarsLabel" type="Label" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 28
+text = "★ ★ ★"
+horizontal_alignment = 1
+
+[node name="StarsDetailLabel" type="Label" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "★ Objective Cleared   ★ 2+ Shields Intact   ★ Par Time Beaten"
+horizontal_alignment = 1
+
+[node name="SummaryLabel" type="Label" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 14
-text = "ALL 12 CORES SECURED!\nMISSION TIME: 00:00\nFINAL SCORE: 0\n\nPRESS [ R ] TO PLAY AGAIN   •   ESC: MENU"
+text = "ALL CORES SECURED!
+MISSION TIME: 00:00
+FINAL SCORE: 0"
 horizontal_alignment = 1
 
+[node name="HSeparator" type="HSeparator" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
+layout_mode = 2
+
+[node name="VictoryActions" type="HBoxContainer" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="NextLevelBtn" type="Button" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/VictoryActions"]
+custom_minimum_size = Vector2(170, 42)
+layout_mode = 2
+text = "NEXT MISSION ▶"
+
+[node name="ReplayBtn" type="Button" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/VictoryActions"]
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "REPLAY ⟳"
+
+[node name="SelectMissionBtn" type="Button" parent="Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/VictoryActions"]
+custom_minimum_size = Vector2(170, 42)
+layout_mode = 2
+text = "MISSION SELECT ☰"
+
 [node name="PauseMenu" parent="." instance=ExtResource("2_pause")]
+visible = false
+
+[node name="LevelSelectDialog" parent="." instance=ExtResource("3_level_select")]
 visible = false

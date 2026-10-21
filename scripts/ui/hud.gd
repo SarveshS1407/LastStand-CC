@@ -2,12 +2,13 @@ class_name GameHUD
 extends CanvasLayer
 
 ## Heads-Up Display and UI overlay manager for Last Stand: Signal Break.
-## Displays shields, energy, uplink cores, waves, combos, score, and overlays.
+## Displays shields, energy, uplink cores, waves, combos, score, level badges, and overlays.
 
 @onready var shield_container: HBoxContainer = $MarginContainer/TopBar/LeftPanel/ShieldContainer
 @onready var energy_bar: ProgressBar = $MarginContainer/TopBar/LeftPanel/EnergyBar
 @onready var energy_status_label: Label = $MarginContainer/TopBar/LeftPanel/EnergyStatusLabel
 
+@onready var level_badge: Label = $MarginContainer/TopBar/CenterPanel/LevelBadge
 @onready var wave_label: Label = $MarginContainer/TopBar/CenterPanel/WaveLabel
 @onready var combo_label: Label = $MarginContainer/TopBar/CenterPanel/ComboLabel
 
@@ -24,9 +25,31 @@ extends CanvasLayer
 @onready var game_over_overlay: Control = $Overlays/GameOverOverlay
 @onready var victory_overlay: Control = $Overlays/VictoryOverlay
 @onready var pause_menu: Control = $PauseMenu
+@onready var level_select_dialog: Control = $LevelSelectDialog
 
-@onready var game_over_summary: Label = $Overlays/GameOverOverlay/CenterContainer/Panel/VBoxContainer/SummaryLabel
-@onready var victory_summary: Label = $Overlays/VictoryOverlay/CenterContainer/Panel/VBoxContainer/SummaryLabel
+# Briefing Nodes
+@onready var briefing_title: Label = $Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox/Title
+@onready var briefing_subtitle: Label = $Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox/Subtitle
+@onready var briefing_text: Label = $Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox/BriefingText
+@onready var start_mission_btn: Button = $Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox/BriefingActions/StartMissionBtn
+@onready var briefing_mission_select_btn: Button = $Overlays/BriefingOverlay/CenterContainer/Panel/Margin/VBox/BriefingActions/MissionSelectBtn
+
+# Game Over Nodes
+@onready var game_over_title: Label = $Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer/Title
+@onready var game_over_subtitle: Label = $Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer/Subtitle
+@onready var game_over_summary: Label = $Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer/SummaryLabel
+@onready var game_over_retry_btn: Button = $Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer/GameOverActions/RetryBtn
+@onready var game_over_select_btn: Button = $Overlays/GameOverOverlay/CenterContainer/Panel/Margin/VBoxContainer/GameOverActions/SelectMissionBtn
+
+# Victory Nodes
+@onready var victory_title: Label = $Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/Title
+@onready var victory_subtitle: Label = $Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/Subtitle
+@onready var victory_stars_label: Label = $Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/StarsLabel
+@onready var victory_stars_detail: Label = $Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/StarsDetailLabel
+@onready var victory_summary: Label = $Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/SummaryLabel
+@onready var victory_next_btn: Button = $Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/VictoryActions/NextLevelBtn
+@onready var victory_replay_btn: Button = $Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/VictoryActions/ReplayBtn
+@onready var victory_select_btn: Button = $Overlays/VictoryOverlay/CenterContainer/Panel/Margin/VBoxContainer/VictoryActions/SelectMissionBtn
 
 var _shield_pips: Array[ColorRect] = []
 var _combo_tween: Tween
@@ -37,6 +60,29 @@ func _ready() -> void:
 	_setup_shields(3)
 	hide_all_overlays()
 	combo_label.modulate.a = 0.0
+	_connect_overlay_buttons()
+
+
+func _connect_overlay_buttons() -> void:
+	# Briefing
+	if start_mission_btn:
+		start_mission_btn.pressed.connect(_on_start_mission_pressed)
+	if briefing_mission_select_btn:
+		briefing_mission_select_btn.pressed.connect(open_level_select)
+		
+	# Game Over
+	if game_over_retry_btn:
+		game_over_retry_btn.pressed.connect(_on_retry_pressed)
+	if game_over_select_btn:
+		game_over_select_btn.pressed.connect(open_level_select)
+		
+	# Victory
+	if victory_next_btn:
+		victory_next_btn.pressed.connect(_on_next_mission_pressed)
+	if victory_replay_btn:
+		victory_replay_btn.pressed.connect(_on_retry_pressed)
+	if victory_select_btn:
+		victory_select_btn.pressed.connect(open_level_select)
 
 
 func _setup_shields(max_hp: int) -> void:
@@ -81,6 +127,10 @@ func update_energy(current: float, max_ep: float, cooldown_active: bool = false,
 		energy_status_label.modulate = Color(0.3, 0.95, 1.0)
 
 
+func update_level_badge(level_id: int, level_name: String) -> void:
+	level_badge.text = "MISSION %02d: %s" % [level_id, level_name.to_upper()]
+
+
 func update_wave(wave_num: int, wave_title: String) -> void:
 	wave_label.text = "THREAT LEVEL " + str(wave_num) + ": " + wave_title.to_upper()
 
@@ -117,6 +167,19 @@ func update_timer(seconds: float) -> void:
 	timer_label.text = "TIME: %02d:%02d" % [mins, secs]
 
 
+func setup_briefing(level_id: int, level_data: Dictionary) -> void:
+	var lname: String = level_data.get("name", "Sector Infiltration")
+	var stitle: String = level_data.get("stage_title", "Campaign Mission")
+	var obj: String = level_data.get("objective", "Secure all signal fragments.")
+	var par: float = level_data.get("par_time", 60.0)
+	var cores: int = level_data.get("cores_needed", 12)
+	
+	briefing_title.text = "MISSION %02d: %s" % [level_id, lname.to_upper()]
+	briefing_subtitle.text = stitle.to_upper()
+	
+	briefing_text.text = "TACTICAL OBJECTIVE:\n• %s\n• Required Cores: %d   • Par Extraction Time: %ds\n\nDISRUPTION PULSE [SPACE]:\n• Emits EMP shockwave that stuns hostiles in range.\n• Collect blue shield kits to repair and gold cells to overcharge!\n\nCONTROLS:\n• WASD / Arrows / Touch: Movement   • SPACE: EMP Pulse   • ESC: Menu" % [obj, cores, int(par)]
+
+
 func show_briefing() -> void:
 	hide_all_overlays()
 	briefing_overlay.visible = true
@@ -126,27 +189,94 @@ func hide_briefing() -> void:
 	briefing_overlay.visible = false
 
 
-func show_game_over(score: int, high_score: int, cores: int, total_cores: int, time: float) -> void:
+func show_game_over(level_id: int, level_name: String, score: int, high_score: int, cores: int, total_cores: int, time: float) -> void:
 	hide_all_overlays()
 	game_over_overlay.visible = true
 	var mins := int(time) / 60
 	var secs := int(time) % 60
-	var is_new_record := score > high_score and score > 0
-	var record_str := "★ NEW BEST RECORD! ★\n" if is_new_record else ""
-	game_over_summary.text = "%sCORES SECURED: %d / %d\nTIME SURVIVED: %02d:%02d\nFINAL SCORE: %d\nRECORD BEST: %d\n\nTAP SCREEN OR PRESS [ R ] TO RETRY   •   ESC: MENU" % [record_str, cores, total_cores, mins, secs, score, maxi(score, high_score)]
+	game_over_title.text = "MISSION %02d FAILED" % level_id
+	game_over_subtitle.text = "%s — Operative shields depleted." % level_name.to_upper()
+	game_over_summary.text = "CORES SECURED: %d / %d\nTIME SURVIVED: %02d:%02d\nFINAL SCORE: %d\nRECORD BEST: %d\n\nPRESS [ R ] TO RETRY   •   ESC: MENU" % [cores, total_cores, mins, secs, score, maxi(score, high_score)]
 
 
-func show_victory(score: int, high_score: int, cores: int, time: float) -> void:
+func show_victory(result: Dictionary, score: int, high_score: int, cores: int, time: float, health_remaining: int) -> void:
 	hide_all_overlays()
 	victory_overlay.visible = true
 	var mins := int(time) / 60
 	var secs := int(time) % 60
 	var is_new_record := score > high_score and score > 0
 	var record_str := "★ NEW BEST RECORD! ★\n" if is_new_record else ""
-	victory_summary.text = "%sALL %d CORES SECURED!\nMISSION TIME: %02d:%02d\nFINAL SCORE: %d\nRECORD BEST: %d\n\nTAP SCREEN OR PRESS [ R ] TO PLAY AGAIN   •   ESC: MENU" % [record_str, cores, mins, secs, score, maxi(score, high_score)]
+	
+	var lvl_id: int = result.get("level_id", 1)
+	var lvl_name: String = result.get("level_name", "Mission")
+	var stars: int = result.get("stars_earned", 1)
+	var par: float = result.get("par_time", 60.0)
+	var is_campaign_complete: bool = result.get("is_campaign_complete", false)
+	
+	# Star string
+	var star_str := ""
+	for i in range(3):
+		star_str += "★ " if i < stars else "☆ "
+	victory_stars_label.text = star_str
+	
+	var star2_text := "✔ 2+ Shields Intact" if health_remaining >= 2 else "✖ Shields Depleted"
+	var star3_text := "✔ Under Par (%ds)" % int(par) if time <= par else "✖ Par Time Exceeded (%ds)" % int(par)
+	victory_stars_detail.text = "★ Level Cleared   •   %s   •   %s" % [star2_text, star3_text]
+	
+	if is_campaign_complete:
+		victory_title.text = "★ CAMPAIGN VICTORY: FACILITY LIBERATED ★"
+		victory_subtitle.text = "TITAN OVERMIND NEUTRALIZED! ALL 20 SECTORS SECURED!"
+		var cm := _get_cm()
+		var total_stars: int = cm.get_total_stars() if cm else 60
+		victory_summary.text = "%sCAMPAIGN COMPLETE! TOTAL STARS: %d / 60 ⭐\nFINAL SCORE: %d\nRECORD BEST: %d\n\nCONGRATULATIONS OPERATIVE — OPERATION SIGNAL BREAK IS WON!" % [record_str, total_stars, score, maxi(score, high_score)]
+		victory_next_btn.text = "CAMPAIGN SELECT ☰"
+	else:
+		victory_title.text = "MISSION %02d CLEARED" % lvl_id
+		victory_subtitle.text = "%s — Extractions Uplink Established" % lvl_name.to_upper()
+		victory_summary.text = "%sALL %d CORES SECURED!\nMISSION TIME: %02d:%02d (PAR: %ds)\nFINAL SCORE: %d\nRECORD BEST: %d\n\nSELECT ACTION BELOW OR PRESS [ R ] TO REPLAY" % [record_str, cores, mins, secs, int(par), score, maxi(score, high_score)]
+		victory_next_btn.text = "NEXT MISSION ▶"
 
 
 func hide_all_overlays() -> void:
 	briefing_overlay.visible = false
 	game_over_overlay.visible = false
 	victory_overlay.visible = false
+	if level_select_dialog:
+		level_select_dialog.visible = false
+
+
+func open_level_select() -> void:
+	hide_all_overlays()
+	if level_select_dialog:
+		level_select_dialog.open()
+
+
+func _on_start_mission_pressed() -> void:
+	var gm = get_tree().get_first_node_in_group("game_manager")
+	if gm and gm.has_method("start_match"):
+		gm.start_match()
+
+
+func _get_cm() -> Node:
+	return get_node_or_null("/root/CampaignManager")
+
+
+func _on_retry_pressed() -> void:
+	var cm := _get_cm()
+	if cm:
+		cm.restart_current_level()
+	else:
+		get_tree().paused = false
+		get_tree().reload_current_scene()
+
+
+func _on_next_mission_pressed() -> void:
+	var cm := _get_cm()
+	if cm:
+		if cm.has_next_level() and not (cm.current_level_id == 20):
+			cm.next_level()
+		else:
+			open_level_select()
+	else:
+		get_tree().paused = false
+		get_tree().reload_current_scene()

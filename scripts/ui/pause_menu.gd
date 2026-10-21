@@ -5,6 +5,7 @@ extends Control
 
 @onready var resume_btn: Button = $CenterContainer/Panel/Margin/VBox/ResumeBtn
 @onready var settings_btn: Button = $CenterContainer/Panel/Margin/VBox/SettingsBtn
+@onready var level_select_btn: Button = $CenterContainer/Panel/Margin/VBox/LevelSelectBtn
 @onready var restart_btn: Button = $CenterContainer/Panel/Margin/VBox/RestartBtn
 @onready var settings_dialog: Control = $SettingsDialog
 
@@ -16,6 +17,7 @@ func _ready() -> void:
 	
 	resume_btn.pressed.connect(_on_resume_pressed)
 	settings_btn.pressed.connect(_on_settings_pressed)
+	level_select_btn.pressed.connect(_on_level_select_pressed)
 	restart_btn.pressed.connect(_on_restart_pressed)
 
 
@@ -51,6 +53,13 @@ func _on_resume_pressed() -> void:
 
 func _on_settings_pressed() -> void:
 	settings_dialog.visible = true
+
+
+func _on_level_select_pressed() -> void:
+	var hud = get_parent()
+	if hud and hud.has_method("open_level_select"):
+		set_paused(false)
+		hud.open_level_select()
 
 
 func _on_restart_pressed() -> void:

@@ -67,6 +67,12 @@ layout_mode = 2
 size_flags_horizontal = 4
 text = "SETTINGS"
 
+[node name="LevelSelectBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(200, 38)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "MISSION SELECT"
+
 [node name="RestartBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox"]
 custom_minimum_size = Vector2(200, 38)
 layout_mode = 2

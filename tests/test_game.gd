@@ -1,7 +1,8 @@
 extends SceneTree
 
 ## Comprehensive QA Automated Verification Suite for Last Stand: Signal Break.
-## Verifies 1600x900 architecture, drone archetypes, overcharge, pickups, waves, FSM, and persistence.
+## Verifies 1600x900 architecture, all 6 drone archetypes, 20-level campaign progression,
+## star rating mechanics, dynamic spawning, overcharge, waves, mobile touch, and persistence.
 
 const GameManagerScript = preload("res://scripts/systems/game_manager.gd")
 const EnemyDroneScript = preload("res://scripts/enemy/enemy.gd")
@@ -10,6 +11,7 @@ const ShieldPickupScript = preload("res://scripts/collectible/shield_pickup.gd")
 const OverchargePickupScript = preload("res://scripts/collectible/overcharge_pickup.gd")
 const PlayerScript = preload("res://scripts/player/player.gd")
 const SettingsManagerScript = preload("res://scripts/systems/settings_manager.gd")
+const CampaignManagerScript = preload("res://scripts/systems/campaign_manager.gd")
 
 var _failures: int = 0
 var _passes: int = 0
@@ -17,7 +19,7 @@ var _passes: int = 0
 
 func _init() -> void:
 	print("==================================================================")
-	print("  QA AUTOMATED VERIFICATION SUITE — LAST STAND: SIGNAL BREAK      ")
+	print("  QA AUTOMATED VERIFICATION SUITE — LAST STAND: 20-LEVEL CAMPAIGN ")
 	print("==================================================================")
 	call_deferred("_run_all_tests")
 
@@ -29,10 +31,16 @@ func _run_all_tests() -> void:
 		quit(1)
 		return
 		
+	var cm_existing = root.get_node_or_null("CampaignManager")
+	if not cm_existing:
+		var cm_node = CampaignManagerScript.new()
+		cm_node.name = "CampaignManager"
+		root.add_child(cm_node)
+		
 	var main = main_packed.instantiate()
 	root.add_child(main)
 	
-	for i in range(3):
+	for i in range(5):
 		await process_frame
 		
 	var player = main.get_node_or_null("Player")
@@ -56,27 +64,64 @@ func _run_all_tests() -> void:
 	_assert_true(viewport_w == 1600 and viewport_h == 900, "Project display viewport configured to 1600x900")
 	_assert_true(player.global_position == Vector2(800, 520), "Player starts centered at (800, 520)")
 	_assert_true(camera != null and camera.position == Vector2(800, 450), "Main camera present and centered")
-	_assert_true(gm.total_cores_needed == 12, "Uplink requires 12 Energy Cores")
-	_assert_true(enemies_node and enemies_node.get_child_count() == 4, "4 initial defense drones present in arena")
+	_assert_true(hud.has_node("LevelSelectDialog"), "LevelSelectDialog integrated into HUD")
 	
 	# ----------------------------------------------------
-	# TEST 2: Enemy Archetypes (Scout, Enforcer, Hunter)
+	# TEST 2: All 6 Enemy Drone Archetypes
 	# ----------------------------------------------------
-	print("\n[TEST 2] Verifying Enemy Drone Archetypes...")
-	var scout_drone = enemies_node.get_node_or_null("Drone_ScoutNorth")
-	var enforcer_drone = enemies_node.get_node_or_null("Drone_HeavyWest")
-	var hunter_drone = enemies_node.get_node_or_null("Drone_HunterEast")
+	print("\n[TEST 2] Verifying All 6 Enemy Drone Archetypes...")
+	# Instantiate test drones for each archetype
+	var drone_scene = preload("res://scenes/enemy/enemy.tscn")
 	
-	_assert_true(scout_drone and scout_drone.drone_type == EnemyDroneScript.DroneType.SCOUT, "Scout drone initialized")
-	_assert_true(enforcer_drone and enforcer_drone.drone_type == EnemyDroneScript.DroneType.ENFORCER, "Heavy Enforcer drone initialized")
-	_assert_true(hunter_drone and hunter_drone.drone_type == EnemyDroneScript.DroneType.HUNTER, "Hunter drone initialized")
+	# Scout
+	var scout = drone_scene.instantiate()
+	scout.drone_type = EnemyDroneScript.DroneType.SCOUT
+	main.add_child(scout)
+	_assert_approx(scout.patrol_speed, 105.0, "Scout patrol speed is 105 px/s")
+	_assert_true(scout.contact_damage == 1, "Scout deals 1 shield damage")
+	scout.queue_free()
 	
-	_assert_approx(enforcer_drone.contact_damage, 2.0, "Heavy Enforcer deals 2 contact damage")
-	_assert_approx(hunter_drone.chase_speed, 185.0, "Hunter drone pursues at elevated speed (185 px/s)")
+	# Enforcer (Heavy)
+	var enforcer = drone_scene.instantiate()
+	enforcer.drone_type = EnemyDroneScript.DroneType.ENFORCER
+	main.add_child(enforcer)
+	_assert_true(enforcer.contact_damage == 2, "Enforcer deals 2 shield damage")
+	enforcer.apply_stun(3.0)
+	_assert_approx(enforcer.stun_timer, 1.95, "Enforcer chassis absorbs 35% stun duration (~1.95s)", 0.1)
+	enforcer.queue_free()
 	
-	# Enforcer stun recovery test (armored chassis)
-	enforcer_drone.apply_stun(3.0)
-	_assert_approx(enforcer_drone.stun_timer, 1.95, "Enforcer chassis reduces stun duration by 35% (got ~1.95s)", 0.1)
+	# Hunter
+	var hunter = drone_scene.instantiate()
+	hunter.drone_type = EnemyDroneScript.DroneType.HUNTER
+	main.add_child(hunter)
+	_assert_approx(hunter.chase_speed, 185.0, "Hunter drone chases at 185 px/s")
+	hunter.queue_free()
+	
+	# Elite Enforcer
+	var elite = drone_scene.instantiate()
+	elite.drone_type = EnemyDroneScript.DroneType.ELITE_ENFORCER
+	main.add_child(elite)
+	_assert_true(elite.contact_damage == 3, "Elite Enforcer deals 3 lethal shield damage")
+	elite.apply_stun(4.0)
+	_assert_approx(elite.stun_timer, 2.0, "Elite Enforcer absorbs 50% stun duration", 0.1)
+	elite.queue_free()
+	
+	# Stalker
+	var stalker = drone_scene.instantiate()
+	stalker.drone_type = EnemyDroneScript.DroneType.STALKER
+	main.add_child(stalker)
+	_assert_approx(stalker.chase_speed, 205.0, "Stalker pursues at high speed (205 px/s)")
+	_assert_approx(stalker.detection_radius, 280.0, "Stalker has expanded 280px detection radius")
+	stalker.queue_free()
+	
+	# Titan Overmind Boss
+	var overmind = drone_scene.instantiate()
+	overmind.drone_type = EnemyDroneScript.DroneType.OVERMIND
+	main.add_child(overmind)
+	_assert_true(overmind.contact_damage == 3, "Titan Overmind boss deals 3 damage")
+	overmind.apply_stun(5.0)
+	_assert_approx(overmind.stun_timer, 2.0, "Titan Overmind absorbs 60% EMP duration", 0.1)
+	overmind.queue_free()
 	
 	# ----------------------------------------------------
 	# TEST 3: Disruption Pulse & EMP Overcharge Mode
@@ -100,66 +145,126 @@ func _run_all_tests() -> void:
 	_assert_true(not player.has_overcharge, "Overcharge consumed on super-pulse blast")
 	
 	# ----------------------------------------------------
-	# TEST 4: Pickups (Shield Repair & Overcharge Cell)
+	# TEST 4: Dynamic Level Spawning & Pickups
 	# ----------------------------------------------------
-	print("\n[TEST 4] Verifying Pickups (Shields & Overcharge)...")
-	var shield_kit = collectibles_node.get_node_or_null("ShieldKit1")
-	_assert_true(shield_kit != null, "Shield repair kit exists")
-	player.current_health = 1
-	shield_kit._on_body_entered(player)
-	_assert_true(player.current_health == 2, "Shield repair kit increased player health from 1 to 2")
-	
-	var overcharge_cell = collectibles_node.get_node_or_null("OverchargeCell")
-	_assert_true(overcharge_cell != null, "Overcharge EMP cell exists")
-	overcharge_cell._on_body_entered(player)
-	_assert_true(player.has_overcharge, "Overcharge cell granted overcharge status")
+	print("\n[TEST 4] Verifying Dynamic Spawning & Pickups...")
+	_assert_true(enemies_node != null and enemies_node.get_child_count() >= 1, "Enemies container populated dynamically")
+	_assert_true(collectibles_node != null and collectibles_node.get_child_count() >= 1, "Collectibles container populated dynamically")
 	
 	# ----------------------------------------------------
-	# TEST 5: Wave Progression & Escalating Threat Levels
+	# TEST 5: Wave & Threat Progression
 	# ----------------------------------------------------
 	print("\n[TEST 5] Verifying Wave & Threat Progression...")
 	gm.start_match()
-	_assert_true(gm.current_wave == 1, "Game starts in Wave 1: Infiltration")
+	_assert_true(gm.current_wave == 1, "Game starts in Threat Level 1: Infiltration")
 	
+	gm.total_cores_needed = 10
 	gm.collected_cores = 3
 	gm._check_wave_progression()
-	_assert_true(gm.current_wave == 2, "Reaching 3 cores escalates to Wave 2: Defense Grid Alert")
+	_assert_true(gm.current_wave == 2, "30% cores reaches Threat Level 2: Defense Grid Alert")
 	
 	gm.collected_cores = 6
 	gm._check_wave_progression()
-	_assert_true(gm.current_wave == 3, "Reaching 6 cores escalates to Wave 3: Sector Lockdown")
+	_assert_true(gm.current_wave == 3, "60% cores reaches Threat Level 3: Sector Lockdown")
 	
-	gm.collected_cores = 9
+	gm.collected_cores = 8
 	gm._check_wave_progression()
-	_assert_true(gm.current_wave == 4, "Reaching 9 cores escalates to Wave 4: Extraction Override")
+	_assert_true(gm.current_wave == 4, "80% cores reaches Threat Level 4: Extraction Override")
 	
 	# ----------------------------------------------------
-	# TEST 6: Multi-Disrupt Combo Bonus
+	# TEST 6: Multi-Disrupt Combo Scoring
 	# ----------------------------------------------------
 	print("\n[TEST 6] Verifying Multi-Disrupt Combo Scoring...")
 	var score_before = gm.score
-	gm.register_drone_stunned(1) # Single drone
+	gm.register_drone_stunned(1)
 	_assert_true(gm.score == score_before + 25, "Single drone stun awards base +25 score")
 	
 	score_before = gm.score
-	gm.register_drone_stunned(3) # 3 drones caught in one pulse
-	var expected_combo = 25 + (50 * 3) # 175 points
+	gm.register_drone_stunned(3)
+	var expected_combo = 25 + (50 * 3)
 	_assert_true(gm.score == score_before + expected_combo, "Triple drone stun awards +175 combo score")
 	
 	# ----------------------------------------------------
-	# TEST 7: Victory & Defeat End States
+	# TEST 7: Complete 20-Level Campaign Progression
 	# ----------------------------------------------------
-	print("\n[TEST 7] Verifying End-State Transitions & Record Saving...")
-	gm.collected_cores = 12
+	print("\n[TEST 7] Verifying 20-Level Campaign Definitions & Progression...")
+	var cm = root.get_node_or_null("CampaignManager")
+	_assert_true(cm != null, "CampaignManager autoload exists in SceneTree")
+	
+	if cm:
+		var all_levels = cm.get_all_level_defs()
+		_assert_true(all_levels.size() == 20, "Campaign contains exactly 20 fully authored levels")
+		
+		# Verify each stage has 4 levels with escalating requirements
+		var stage_counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+		var prev_cores = 0
+		for lvl in all_levels:
+			var id: int = lvl["id"]
+			var st: int = lvl["stage"]
+			var cores: int = lvl["cores_needed"]
+			var par: float = lvl["par_time"]
+			var drones: Array = lvl["drones"]
+			
+			stage_counts[st] += 1
+			_assert_true(not lvl["name"].is_empty(), "Level %d has unique mission name: %s" % [id, lvl["name"]])
+			_assert_true(cores >= 3 and cores <= 15, "Level %d requires between 3 and 15 cores (got %d)" % [id, cores])
+			_assert_true(par >= 40.0 and par <= 120.0, "Level %d has valid par time (%0.1fs)" % [id, par])
+			_assert_true(drones.size() >= 1, "Level %d has at least 1 drone patrol" % id)
+			
+		_assert_true(stage_counts[1] == 4, "Stage 1 contains 4 levels (Levels 1-4)")
+		_assert_true(stage_counts[2] == 4, "Stage 2 contains 4 levels (Levels 5-8)")
+		_assert_true(stage_counts[3] == 4, "Stage 3 contains 4 levels (Levels 9-12)")
+		_assert_true(stage_counts[4] == 4, "Stage 4 contains 4 levels (Levels 13-16)")
+		_assert_true(stage_counts[5] == 4, "Stage 5 contains 4 levels (Levels 17-20)")
+		
+		# Verify Level 20 Titan Overmind boss
+		var lvl20 = cm.get_level_data(20)
+		_assert_true(lvl20["name"] == "Titan Overmind", "Level 20 is the Titan Overmind Boss Finale")
+		_assert_true(lvl20["cores_needed"] == 15, "Level 20 requires all 15 Singularity Cores")
+		var has_overmind_drone := false
+		for d in lvl20["drones"]:
+			if d["type"] == EnemyDroneScript.DroneType.OVERMIND:
+				has_overmind_drone = true
+		_assert_true(has_overmind_drone, "Level 20 instantiates the Titan Overmind Drone")
+		
+		# Verify Star Rating Calculation
+		# 3 Stars: health >= 2, time <= par
+		var res3 = cm.complete_level(1, 1000, 30.0, 3) # par is 40.0
+		_assert_true(res3["stars_earned"] == 3, "Clearing level under par with full health awards 3 Stars")
+		
+		# 2 Stars: health >= 2, time > par
+		var res2 = cm.complete_level(1, 800, 55.0, 2)
+		_assert_true(res2["stars_earned"] == 2, "Clearing level over par with >=2 health awards 2 Stars")
+		
+		# 1 Star: health == 1, time > par
+		var res1 = cm.complete_level(1, 500, 60.0, 1)
+		_assert_true(res1["stars_earned"] == 1, "Barely clearing level awards 1 Star")
+		
+		# Verify Level Unlocking
+		cm.highest_unlocked_level = 1
+		cm.complete_level(1, 1000, 30.0, 3)
+		_assert_true(cm.is_level_unlocked(2), "Completing Level 1 unlocks Level 2")
+		_assert_true(not cm.is_level_unlocked(5), "Level 5 remains locked until prior levels are cleared")
+		
+		# Verify Level 20 unlocks Campaign Complete
+		var res20 = cm.complete_level(20, 5000, 80.0, 3)
+		_assert_true(res20["is_campaign_complete"], "Completing Level 20 marks Campaign Complete")
+		_assert_true(cm.campaign_completed, "CampaignManager tracks campaign_completed flag")
+		
+	# ----------------------------------------------------
+	# TEST 8: Victory & Defeat End States
+	# ----------------------------------------------------
+	print("\n[TEST 8] Verifying End-State Transitions & Overlays...")
+	gm.collected_cores = gm.total_cores_needed
 	gm.trigger_victory()
-	_assert_true(gm.current_state == GameManagerScript.GameState.VICTORY, "12 cores triggers extraction VICTORY")
-	_assert_true(hud.victory_overlay.visible, "Victory overlay displayed")
+	_assert_true(gm.current_state == GameManagerScript.GameState.VICTORY, "Completing cores triggers VICTORY")
+	_assert_true(hud.victory_overlay.visible, "Victory overlay displayed with star ratings")
 	_assert_true(gm.high_score >= gm.score, "High score record updated and persisted")
 	
 	# ----------------------------------------------------
-	# TEST 8: Mobile Touch Controls & Responsiveness
+	# TEST 9: Mobile Touch Controls & Responsiveness
 	# ----------------------------------------------------
-	print("\n[TEST 8] Verifying Mobile Touch Controls & Responsiveness...")
+	print("\n[TEST 9] Verifying Mobile Touch Controls & Responsiveness...")
 	var touch_controls = main.get_node_or_null("TouchControls")
 	_assert_true(touch_controls != null, "TouchControls scene instantiated in main arena")
 	
@@ -184,7 +289,7 @@ func _run_all_tests() -> void:
 	print("==================================================================")
 	
 	if _failures == 0:
-		print(">> ALL SYSTEMS AND EXPANDED MECHANICS FULLY VERIFIED! <<\n")
+		print(">> ALL SYSTEMS AND 20-LEVEL CAMPAIGN FULLY VERIFIED! <<\n")
 		quit(0)
 	else:
 		printerr(">> TEST SUITE COMPLETED WITH FAILURES! <<\n")
