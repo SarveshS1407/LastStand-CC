@@ -61,6 +61,21 @@ func _ready() -> void:
 	hide_all_overlays()
 	combo_label.modulate.a = 0.0
 	_connect_overlay_buttons()
+	_check_controls_hint()
+
+
+func _check_controls_hint() -> void:
+	var sm = get_node_or_null("/root/SettingsManager")
+	var is_touch: bool = false
+	if sm and sm.has_method("should_show_touch_controls"):
+		is_touch = sm.should_show_touch_controls()
+	else:
+		is_touch = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile")
+		
+	if is_touch:
+		controls_hint.text = "VIRTUAL THUMBSTICK: Move   •   EMP BUTTON: Disruption Pulse   •   ❚❚: Pause"
+	else:
+		controls_hint.text = "WASD / ARROWS: Move   •   SPACE: Disruption Pulse   •   ESC: Pause/Settings   •   F11: Fullscreen"
 
 
 func _connect_overlay_buttons() -> void:
@@ -92,7 +107,7 @@ func _setup_shields(max_hp: int) -> void:
 	
 	for i in range(max_hp):
 		var pip := ColorRect.new()
-		pip.custom_minimum_size = Vector2(26, 16)
+		pip.custom_minimum_size = Vector2(32, 18)
 		pip.color = Color(0.18, 0.75, 1.0, 1.0)
 		shield_container.add_child(pip)
 		_shield_pips.append(pip)

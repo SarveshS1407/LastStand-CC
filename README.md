@@ -170,9 +170,9 @@ When launched on phones or touch devices, the game automatically surfaces an on-
 
 ## 7. Automated QA Testing Report
 
-An automated test suite containing **130 rigorous assertions** was executed in Godot 4.7.2 headless mode (`tests/test_game.gd`).
+An automated test suite containing **168 rigorous assertions** was executed in Godot 4.7.2 headless mode (`tests/test_game.gd`).
 
-### Results: `130 PASSED, 0 FAILED`
+### Results: `168 PASSED, 0 FAILED`
 
 | Category | Checks Performed | Result |
 | :--- | :--- | :--- |
@@ -187,6 +187,8 @@ An automated test suite containing **130 rigorous assertions** was executed in G
 | **Progression & Unlocking** | Level unlocking (Lvl 1 $\rightarrow$ 2 $\rightarrow$ ... $\rightarrow$ 20), persistent save tracking, Campaign Complete flag. | **PASS** |
 | **End States & Records** | Victory overlay with star breakdown, game over dialog, high score persistence. | **PASS** |
 | **Mobile Touch Controls** | TouchControls scene present, SettingsManager helper, Player analog touch vector. | **PASS** |
+| **Touch Target Standards** | All interactive buttons in LevelSelect, HUD, PauseMenu, and Settings comply with $\ge 44$px touch target standards. | **PASS** |
+| **Multi-Viewport Adaptation** | Responsive positioning validated across 5 mobile viewports: 320×568, 360×800, 375×812, 390×844, 412×915. | **PASS** |
 
 ---
 

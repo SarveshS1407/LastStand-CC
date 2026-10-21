@@ -4,6 +4,7 @@ extends Control
 ## Level Selection Screen for Last Stand: Signal Break.
 ## Displays all 20 campaign levels divided into 5 tactical stages,
 ## showing lock/unlock status, star ratings (0-3), best scores, and continue shortcut.
+## Optimized for mobile touchscreens with responsive grid wrapping and large touch targets.
 
 signal level_selected(level_id: int)
 signal closed()
@@ -15,8 +16,11 @@ signal closed()
 @onready var progress_label: Label = $Margin/VBox/Header/StatsBox/ProgressLabel
 @onready var progress_bar: ProgressBar = $Margin/VBox/Header/StatsBox/ProgressBar
 @onready var grid_container: VBoxContainer = $Margin/VBox/ScrollContainer/StagesContainer
+@onready var scroll_container: ScrollContainer = $Margin/VBox/ScrollContainer
 
 var campaign_mgr: Node = null
+var _touch_start_pos := Vector2.ZERO
+var _is_dragging_scroll := false
 
 
 func _ready() -> void:
@@ -62,7 +66,7 @@ func refresh_levels() -> void:
 	var highest_unlocked: int = campaign_mgr.highest_unlocked_level
 	
 	stars_total_label.text = "⭐ %d / 60 STARS" % total_stars
-	progress_label.text = "MISSIONS: %d / 20 CLEARED" % completed_count
+	progress_label.text = "MISSIONS: %d / 20" % completed_count
 	progress_bar.value = completed_count
 
 	continue_btn.text = "▶ CONTINUE MISSION %02d" % highest_unlocked
@@ -91,14 +95,24 @@ func refresh_levels() -> void:
 		if stage_levels.is_empty():
 			continue
 
-		# Stage Header
+		# Stage Header Box
+		var header_box := HBoxContainer.new()
+		header_box.add_theme_constant_override("separation", 10)
+		grid_container.add_child(header_box)
+		
+		var stage_badge := Label.new()
+		stage_badge.text = "[ S%d ]" % stage_num
+		stage_badge.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+		stage_badge.add_theme_font_size_override("font_size", 15)
+		header_box.add_child(stage_badge)
+
 		var header_label := Label.new()
 		header_label.text = stage_names.get(stage_num, "STAGE %d" % stage_num)
 		header_label.add_theme_color_override("font_color", Color(0.0, 0.94, 1.0))
 		header_label.add_theme_font_size_override("font_size", 15)
-		grid_container.add_child(header_label)
+		header_box.add_child(header_label)
 
-		# Stage Grid for 4 Levels
+		# Stage Grid for 4 Levels (Responsive HFlowContainer)
 		var h_grid := HFlowContainer.new()
 		h_grid.add_theme_constant_override("h_separation", 14)
 		h_grid.add_theme_constant_override("v_separation", 14)
@@ -109,7 +123,7 @@ func refresh_levels() -> void:
 			var card := _create_level_card(def, lvl_id, highest_unlocked)
 			h_grid.add_child(card)
 
-		# Separator
+		# Stage Separator
 		if stage_num < 5:
 			var sep := HSeparator.new()
 			sep.custom_minimum_size = Vector2(0, 10)
@@ -122,16 +136,17 @@ func _create_level_card(def: Dictionary, lvl_id: int, highest_unlocked: int) -> 
 	var is_completed: bool = rec.get("completed", false)
 	var stars: int = rec.get("stars", 0)
 	var is_boss: bool = (lvl_id == 20)
-	var is_milestone: bool = (lvl_id in [4, 8, 12, 16, 20])
+	var is_milestone: bool = (lvl_id in [4, 8, 12, 16])
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(340, 130)
+	panel.custom_minimum_size = Vector2(340, 145)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_bottom", 10)
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 12)
 	panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
@@ -143,16 +158,18 @@ func _create_level_card(def: Dictionary, lvl_id: int, highest_unlocked: int) -> 
 	vbox.add_child(top_row)
 
 	var title_lbl := Label.new()
-	title_lbl.text = "%02d: %s" % [lvl_id, def.get("name", "Level %d" % lvl_id)]
-	title_lbl.add_theme_font_size_override("font_size", 14)
+	title_lbl.add_theme_font_size_override("font_size", 15)
 	if is_boss:
-		title_lbl.add_theme_color_override("font_color", Color(1.0, 0.8, 0.1))
-		title_lbl.text = "👑 " + title_lbl.text
+		title_lbl.text = "👑 %02d: %s [BOSS]" % [lvl_id, def.get("name", "Level %d" % lvl_id).to_upper()]
+		title_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.15))
 	elif is_milestone:
-		title_lbl.add_theme_color_override("font_color", Color(1.0, 0.45, 0.25))
+		title_lbl.text = "⚡ %02d: %s" % [lvl_id, def.get("name", "Level %d" % lvl_id).to_upper()]
+		title_lbl.add_theme_color_override("font_color", Color(1.0, 0.55, 0.2))
 	elif is_unlocked:
+		title_lbl.text = "%02d: %s" % [lvl_id, def.get("name", "Level %d" % lvl_id).to_upper()]
 		title_lbl.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
 	else:
+		title_lbl.text = "%02d: %s" % [lvl_id, def.get("name", "Level %d" % lvl_id).to_upper()]
 		title_lbl.add_theme_color_override("font_color", Color(0.45, 0.5, 0.6))
 	top_row.add_child(title_lbl)
 
@@ -163,7 +180,7 @@ func _create_level_card(def: Dictionary, lvl_id: int, highest_unlocked: int) -> 
 
 	# Status icon / text
 	var status_lbl := Label.new()
-	status_lbl.add_theme_font_size_override("font_size", 12)
+	status_lbl.add_theme_font_size_override("font_size", 13)
 	if not is_unlocked:
 		status_lbl.text = "🔒 LOCKED"
 		status_lbl.add_theme_color_override("font_color", Color(0.5, 0.55, 0.65))
@@ -182,32 +199,32 @@ func _create_level_card(def: Dictionary, lvl_id: int, highest_unlocked: int) -> 
 			star_str += "★ " if s < stars else "☆ "
 	var stars_lbl := Label.new()
 	stars_lbl.text = star_str if is_unlocked else "☆ ☆ ☆"
-	stars_lbl.add_theme_font_size_override("font_size", 14)
+	stars_lbl.add_theme_font_size_override("font_size", 16)
 	stars_lbl.add_theme_color_override("font_color", Color(1.0, 0.82, 0.1) if stars > 0 else Color(0.4, 0.45, 0.55))
 	vbox.add_child(stars_lbl)
 
 	# Objective / Best record text
 	var info_lbl := Label.new()
-	info_lbl.add_theme_font_size_override("font_size", 11)
+	info_lbl.add_theme_font_size_override("font_size", 12)
 	if not is_unlocked:
-		info_lbl.text = "Clear preceding sector mission to decrypt."
+		info_lbl.text = "Sector encrypted. Clear prior mission to unlock."
 		info_lbl.add_theme_color_override("font_color", Color(0.4, 0.45, 0.55))
 	elif is_completed:
 		var best_s: int = rec.get("best_score", 0)
 		var best_t: float = rec.get("best_time", 0.0)
-		info_lbl.text = "Cores: %d  •  Best: %d pts  •  Time: %02d:%02d" % [def.get("cores_needed", 12), best_s, int(best_t)/60, int(best_t)%60]
-		info_lbl.add_theme_color_override("font_color", Color(0.75, 0.82, 0.9))
+		info_lbl.text = "Cores: %d  •  Par: %ds  •  Best: %d pts (%02d:%02d)" % [def.get("cores_needed", 12), int(def.get("par_time", 60)), best_s, int(best_t)/60, int(best_t)%60]
+		info_lbl.add_theme_color_override("font_color", Color(0.75, 0.85, 0.95))
 	else:
 		info_lbl.text = "Objective: Retrieve %d Energy Cores (Par: %ds)" % [def.get("cores_needed", 12), int(def.get("par_time", 60))]
-		info_lbl.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9))
+		info_lbl.add_theme_color_override("font_color", Color(0.75, 0.85, 0.95))
 	vbox.add_child(info_lbl)
 
-	# Launch button
+	# Launch button with mobile-friendly 44px min height
 	var btn := Button.new()
 	btn.text = "DEPLOY MISSION" if is_unlocked else "LOCKED"
 	btn.disabled = not is_unlocked
-	btn.custom_minimum_size = Vector2(0, 32)
-	btn.add_theme_font_size_override("font_size", 12)
+	btn.custom_minimum_size = Vector2(0, 44)
+	btn.add_theme_font_size_override("font_size", 13)
 	if is_unlocked:
 		btn.pressed.connect(func(): _on_level_card_pressed(lvl_id))
 	vbox.add_child(btn)

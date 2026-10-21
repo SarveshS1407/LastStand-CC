@@ -273,6 +273,8 @@ def enhance_index_html():
       width: 100vw;
       height: 100vh;
       overflow: hidden;
+      overscroll-behavior: none;
+      -webkit-overscroll-behavior: none;
       background-color: #0a0f1d;
       color: #e2e8f0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -288,6 +290,8 @@ def enhance_index_html():
       outline: none;
       border: none;
       image-rendering: auto;
+      touch-action: none;
+      overscroll-behavior: none;
     }}
 
     /* Cybernetic Loader Screen */
@@ -625,12 +629,22 @@ def enhance_index_html():
 
     // 1. Orientation Monitor
     function checkOrientation() {{
-      const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth < 768;
+      const isPortrait = window.innerHeight > window.innerWidth;
       rotateNotice.style.display = isPortrait ? 'flex' : 'none';
+      if (!isPortrait) {{
+        window.scrollTo(0, 0);
+      }}
     }}
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
     checkOrientation();
+
+    // Prevent accidental gesture pull/scroll on iOS & Android
+    document.addEventListener('touchmove', function (e) {{
+      if (e.target === document.getElementById('canvas')) {{
+        e.preventDefault();
+      }}
+    }}, {{ passive: false }});
 
     // 2. Audio Context Unlock on First Interaction (Mobile Safari & Chrome)
     function unlockAudio() {{
