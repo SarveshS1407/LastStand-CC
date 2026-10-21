@@ -1,0 +1,51 @@
+name: Deploy Last Stand PWA to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Web Build Artifacts
+        run: |
+          echo "Verifying web distribution files..."
+          test -f builds/web/index.html || { echo "ERROR: Missing index.html"; exit 1; }
+          test -f builds/web/index.js || { echo "ERROR: Missing index.js"; exit 1; }
+          test -f builds/web/index.wasm || { echo "ERROR: Missing index.wasm"; exit 1; }
+          test -f builds/web/index.pck || { echo "ERROR: Missing index.pck"; exit 1; }
+          test -f builds/web/manifest.webmanifest || { echo "ERROR: Missing manifest.webmanifest"; exit 1; }
+          test -f builds/web/sw.js || { echo "ERROR: Missing sw.js"; exit 1; }
+          test -d builds/web/icons || { echo "ERROR: Missing icons directory"; exit 1; }
+          echo "All web artifacts verified successfully!"
+          ls -lh builds/web
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'builds/web'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

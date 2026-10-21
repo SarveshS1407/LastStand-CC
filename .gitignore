@@ -8,7 +8,11 @@
 .LSOverride
 
 # Export presets & builds
-builds/
+builds/*
+!builds/web/
+builds/web/**/*.import
+builds/web/*.import
+!builds/mobile_preview.png
 exports/
 *.tmp
 *.translation

@@ -221,7 +221,7 @@ layout_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 1, 0.55, 1)
 theme_override_font_sizes/font_size = 15
-text = "[ PRESS SPACE OR MOVE TO INITIATE INFILTRATION ]"
+text = "[ TAP SCREEN, PRESS SPACE, OR MOVE TO INITIATE ]"
 horizontal_alignment = 1
 
 [node name="GameOverOverlay" type="ColorRect" parent="Overlays"]

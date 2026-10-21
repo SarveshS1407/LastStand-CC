@@ -1,0 +1,752 @@
+#!/usr/bin/env python3
+"""
+Last Stand: Signal Break — Automated Web / PWA Build & Packager
+Exports Godot 4.7.2 to WebAssembly/HTML5, integrates custom cyber-themed branding,
+PWA manifest, offline service worker, iOS/Android installation helpers,
+and mobile responsive viewport handling.
+"""
+
+import os
+import shutil
+import subprocess
+import sys
+import re
+
+GODOT_BIN = "/Users/kingpin/Downloads/Godot.app/Contents/MacOS/Godot"
+PROJECT_DIR = "/Users/kingpin/Documents/Gamedev/last-stand"
+WEB_OUT_DIR = os.path.join(PROJECT_DIR, "builds/web")
+ICONS_OUT_DIR = os.path.join(WEB_OUT_DIR, "icons")
+BRANDING_DIR = os.path.join(PROJECT_DIR, "assets/branding")
+
+def run_cmd(cmd, cwd=PROJECT_DIR):
+    print(f"--> Running: {' '.join(cmd)}")
+    res = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    if res.returncode != 0:
+        print("ERROR:")
+        print(res.stdout)
+        print(res.stderr)
+        sys.exit(res.returncode)
+    print("    Success.")
+    return res.stdout
+
+def export_godot_web():
+    print("=== Step 1: Exporting Godot 4 Web Release ===")
+    os.makedirs(WEB_OUT_DIR, exist_ok=True)
+    
+    # Run Godot headless export
+    cmd = [
+        GODOT_BIN,
+        "--headless",
+        "--path", PROJECT_DIR,
+        "--export-release", "Web",
+        os.path.join(WEB_OUT_DIR, "index.html")
+    ]
+    run_cmd(cmd)
+
+def copy_branding_assets():
+    print("=== Step 2: Copying Branding & App Icons ===")
+    os.makedirs(ICONS_OUT_DIR, exist_ok=True)
+    
+    for item in os.listdir(BRANDING_DIR):
+        src = os.path.join(BRANDING_DIR, item)
+        dst = os.path.join(ICONS_OUT_DIR, item)
+        if os.path.isfile(src):
+            shutil.copy2(src, dst)
+            
+    # Also copy root favicons
+    shutil.copy2(os.path.join(BRANDING_DIR, "favicon.ico"), os.path.join(WEB_OUT_DIR, "favicon.ico"))
+    shutil.copy2(os.path.join(BRANDING_DIR, "favicon-32x32.png"), os.path.join(WEB_OUT_DIR, "favicon.png"))
+    shutil.copy2(os.path.join(BRANDING_DIR, "apple-touch-icon.png"), os.path.join(WEB_OUT_DIR, "apple-touch-icon.png"))
+    shutil.copy2(os.path.join(BRANDING_DIR, "icon-192.png"), os.path.join(WEB_OUT_DIR, "icon-192.png"))
+    shutil.copy2(os.path.join(BRANDING_DIR, "icon-512.png"), os.path.join(WEB_OUT_DIR, "icon-512.png"))
+    shutil.copy2(os.path.join(BRANDING_DIR, "logo-banner.png"), os.path.join(WEB_OUT_DIR, "logo.png"))
+    print("    Icons copied.")
+
+def generate_manifest():
+    print("=== Step 3: Generating Web App Manifest ===")
+    manifest_content = """{
+  "name": "Last Stand: Signal Break",
+  "short_name": "LastStand",
+  "description": "Tactical top-down sci-fi survival arcade game. Collect energy cores, manage EMP disruption pulses, and outlast the drone defense network.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "fullscreen", "minimal-ui"],
+  "orientation": "landscape",
+  "theme_color": "#0a0f1d",
+  "background_color": "#0a0f1d",
+  "categories": ["games", "arcade", "action"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
+"""
+    with open(os.path.join(WEB_OUT_DIR, "manifest.webmanifest"), "w") as f:
+        f.write(manifest_content)
+    # Also write manifest.json alias
+    with open(os.path.join(WEB_OUT_DIR, "manifest.json"), "w") as f:
+        f.write(manifest_content)
+
+def generate_service_worker():
+    print("=== Step 4: Generating PWA Service Worker (Cache & Update Pipeline) ===")
+    sw_content = """// Last Stand: Signal Break — PWA Service Worker
+const CACHE_NAME = 'laststand-v1.0.1';
+
+// Critical shell and game runtime assets to pre-cache
+const PRECACHE_URLS = [
+  './',
+  './index.html',
+  './index.js',
+  './index.pck',
+  './index.wasm',
+  './index.audio.worklet.js',
+  './index.audio.position.worklet.js',
+  './manifest.webmanifest',
+  './favicon.ico',
+  './favicon.png',
+  './apple-touch-icon.png',
+  './icon-192.png',
+  './icon-512.png',
+  './logo.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png',
+  './icons/apple-touch-icon.png'
+];
+
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[SW] Pre-caching game assets for offline play...');
+      return cache.addAll(PRECACHE_URLS).catch((err) => {
+        console.warn('[SW] Some precache items skipped:', err);
+      });
+    })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('[SW] Purging outdated cache:', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  // Only handle GET requests within our scope
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+
+  // Network-first for HTML, Cache-first for large WASM/PCK game assets
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((res) => res || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Cache-first strategy for game runtime binaries & static assets
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).then((networkResponse) => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+        return networkResponse;
+      });
+    })
+  );
+});
+
+// Broadcast update message to active tabs when a new worker takes over
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+"""
+    with open(os.path.join(WEB_OUT_DIR, "sw.js"), "w") as f:
+        f.write(sw_content)
+
+def enhance_index_html():
+    print("=== Step 5: Enhancing index.html with Cyber UI, PWA & Mobile Handlers ===")
+    index_path = os.path.join(WEB_OUT_DIR, "index.html")
+    with open(index_path, "r") as f:
+        content = f.read()
+
+    # Extract GODOT_CONFIG from existing index.html
+    m = re.search(r'const GODOT_CONFIG = ({.*?});', content)
+    if not m:
+        print("ERROR: Could not find GODOT_CONFIG in index.html")
+        sys.exit(1)
+    godot_config_str = m.group(1)
+
+    # Build our custom, beautiful PWA-enabled index.html
+    enhanced_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Last Stand: Signal Break</title>
+  
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Last Stand: Signal Break">
+  <meta name="description" content="Top-down tactical sci-fi survival arcade game. Collect energy cores, manage EMP disruption pulses, and outlast the drone defense network.">
+  <meta name="theme-color" content="#0a0f1d">
+  
+  <!-- Apple iOS Mobile Web App Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LastStand">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+
+  <!-- Favicons & Manifest -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Last Stand: Signal Break">
+  <meta property="og:description" content="Tactical EMP Survival Arcade Game. Playable in browser on mobile and desktop.">
+  <meta property="og:image" content="logo.png">
+
+  <style>
+    * {{
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }}
+
+    html, body {{
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #0a0f1d;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }}
+
+    #canvas {{
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      outline: none;
+      border: none;
+      image-rendering: auto;
+    }}
+
+    /* Cybernetic Loader Screen */
+    #loader-overlay {{
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #112038 0%, #0a0f1d 75%, #050810 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out, visibility 0.5s;
+    }}
+
+    #loader-overlay.fade-out {{
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }}
+
+    .logo-container {{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 28px;
+    }}
+
+    .emblem-ring {{
+      width: 110px;
+      height: 110px;
+      position: relative;
+      margin-bottom: 18px;
+    }}
+
+    .pulse-ring {{
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3px solid #00f0ff;
+      opacity: 0.8;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.45);
+      animation: pulse-glow 2s infinite ease-in-out;
+    }}
+
+    .pulse-inner {{
+      position: absolute;
+      inset: 18px;
+      border-radius: 50%;
+      border: 2px dashed #ffb700;
+      animation: rotate-inner 12s linear infinite;
+    }}
+
+    .core-dot {{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 22px;
+      height: 22px;
+      background: #ffb700;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 15px #ffb700;
+    }}
+
+    @keyframes pulse-glow {{
+      0%, 100% {{ transform: scale(0.96); opacity: 0.6; box-shadow: 0 0 12px rgba(0, 240, 255, 0.3); }}
+      50% {{ transform: scale(1.05); opacity: 1.0; box-shadow: 0 0 28px rgba(0, 240, 255, 0.8); }}
+    }}
+
+    @keyframes rotate-inner {{
+      from {{ transform: rotate(0deg); }}
+      to {{ transform: rotate(360deg); }}
+    }}
+
+    .game-title {{
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: #00f0ff;
+      text-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+      margin: 0;
+      text-transform: uppercase;
+    }}
+
+    .game-subtitle {{
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffb700;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }}
+
+    /* Progress bar */
+    .progress-wrapper {{
+      width: min(340px, 80vw);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }}
+
+    .progress-bar-bg {{
+      width: 100%;
+      height: 10px;
+      background: rgba(15, 30, 55, 0.8);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.6);
+      padding: 1px;
+    }}
+
+    .progress-bar-fill {{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0099ff, #00f0ff, #ffb700);
+      border-radius: 4px;
+      box-shadow: 0 0 12px #00f0ff;
+      transition: width 0.15s ease-out;
+    }}
+
+    .status-text {{
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }}
+
+    /* Install Banner */
+    #install-btn {{
+      display: none;
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 1000;
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(0, 120, 255, 0.35));
+      border: 1.5px solid #00f0ff;
+      border-radius: 20px;
+      padding: 8px 16px;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }}
+
+    #install-btn:hover {{
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.45), rgba(0, 120, 255, 0.55));
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.6);
+    }}
+
+    /* iOS Install Guide Drawer */
+    #ios-install-guide {{
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(92vw, 420px);
+      background: rgba(10, 20, 36, 0.95);
+      border: 1.5px solid #00f0ff;
+      border-radius: 14px;
+      padding: 16px 20px;
+      z-index: 10000;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 240, 255, 0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      text-align: center;
+      animation: slide-up 0.4s ease-out;
+    }}
+
+    @keyframes slide-up {{
+      from {{ transform: translate(-50%, 40px); opacity: 0; }}
+      to {{ transform: translate(-50%, 0); opacity: 1; }}
+    }}
+
+    .guide-title {{
+      font-weight: 800;
+      font-size: 15px;
+      color: #00f0ff;
+      margin-bottom: 8px;
+    }}
+
+    .guide-step {{
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }}
+
+    .guide-close {{
+      margin-top: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #94a3b8;
+      border-radius: 6px;
+      padding: 5px 14px;
+      font-size: 12px;
+      cursor: pointer;
+    }}
+
+    /* Portrait Rotation Notice */
+    #rotate-device-notice {{
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 10, 18, 0.96);
+      z-index: 9998;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      text-align: center;
+    }}
+
+    .rotate-icon {{
+      font-size: 48px;
+      color: #00f0ff;
+      margin-bottom: 16px;
+      animation: rotate-phone 2s infinite ease-in-out;
+    }}
+
+    @keyframes rotate-phone {{
+      0%, 100% {{ transform: rotate(0deg); }}
+      50% {{ transform: rotate(-90deg); }}
+    }}
+
+    .rotate-text {{
+      font-size: 17px;
+      font-weight: 700;
+      color: #00f0ff;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }}
+
+    .rotate-sub {{
+      font-size: 13px;
+      color: #94a3b8;
+      max-width: 280px;
+    }}
+
+    /* Update Toast */
+    #update-toast {{
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f2744;
+      border: 1.5px solid #ffb700;
+      border-radius: 8px;
+      padding: 10px 18px;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      z-index: 10001;
+      cursor: pointer;
+      animation: pulse-update 1.5s infinite;
+    }}
+
+    @keyframes pulse-update {{
+      0%, 100% {{ box-shadow: 0 0 10px rgba(255, 183, 0, 0.4); }}
+      50% {{ box-shadow: 0 0 20px rgba(255, 183, 0, 0.9); }}
+    }}
+  </style>
+</head>
+<body>
+  <canvas id="canvas">
+    Your browser does not support WebGL/Canvas.
+  </canvas>
+
+  <!-- PWA Install Button -->
+  <button id="install-btn" title="Add to Home Screen">📲 INSTALL APP</button>
+
+  <!-- Update Banner -->
+  <div id="update-toast">⚡ NEW UPDATE AVAILABLE • TAP TO RELOAD</div>
+
+  <!-- iOS Add to Home Screen Instructions -->
+  <div id="ios-install-guide">
+    <div class="guide-title">📲 INSTALL LAST STAND</div>
+    <div class="guide-step">
+      Tap the <strong>Share</strong> icon <span style="font-size:16px;">⎋</span> at the bottom of Safari,<br>
+      then select <strong>"Add to Home Screen"</strong> <span style="font-size:16px;">⊞</span> for full-screen gameplay.
+    </div>
+    <button class="guide-close" id="close-ios-guide">Got it</button>
+  </div>
+
+  <!-- Portrait Orientation Prompt -->
+  <div id="rotate-device-notice">
+    <div class="rotate-icon">⟳</div>
+    <div class="rotate-text">ROTATE TO LANDSCAPE</div>
+    <div class="rotate-sub">Please turn your device sideways for the optimal tactical arena radar view.</div>
+  </div>
+
+  <!-- Branded Cyber Loader -->
+  <div id="loader-overlay">
+    <div class="logo-container">
+      <div class="emblem-ring">
+        <div class="pulse-ring"></div>
+        <div class="pulse-inner"></div>
+        <div class="core-dot"></div>
+      </div>
+      <h1 class="game-title">LAST STAND</h1>
+      <div class="game-subtitle">SIGNAL BREAK</div>
+    </div>
+    <div class="progress-wrapper">
+      <div class="progress-bar-bg">
+        <div id="loader-fill" class="progress-bar-fill"></div>
+      </div>
+      <div id="loader-text" class="status-text">INITIALIZING QUANTUM CORE... 0%</div>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+  <script>
+    const GODOT_CONFIG = {godot_config_str};
+    const GODOT_THREADS_ENABLED = false;
+    const engine = new Engine(GODOT_CONFIG);
+
+    const loaderOverlay = document.getElementById('loader-overlay');
+    const loaderFill = document.getElementById('loader-fill');
+    const loaderText = document.getElementById('loader-text');
+    const installBtn = document.getElementById('install-btn');
+    const iosGuide = document.getElementById('ios-install-guide');
+    const closeIosBtn = document.getElementById('close-ios-guide');
+    const rotateNotice = document.getElementById('rotate-device-notice');
+    const updateToast = document.getElementById('update-toast');
+
+    // 1. Orientation Monitor
+    function checkOrientation() {{
+      const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth < 768;
+      rotateNotice.style.display = isPortrait ? 'flex' : 'none';
+    }}
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    checkOrientation();
+
+    // 2. Audio Context Unlock on First Interaction (Mobile Safari & Chrome)
+    function unlockAudio() {{
+      if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {{
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {{
+          ctx.resume();
+        }}
+      }}
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('click', unlockAudio);
+    }}
+    window.addEventListener('touchstart', unlockAudio, {{ passive: true }});
+    window.addEventListener('click', unlockAudio, {{ passive: true }});
+
+    // 3. PWA Install Prompt (Android & Desktop)
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {{
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'block';
+    }});
+
+    installBtn.addEventListener('click', async () => {{
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const {{ outcome }} = await deferredPrompt.userChoice;
+      console.log('[PWA] User choice:', outcome);
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    }});
+
+    window.addEventListener('appinstalled', () => {{
+      installBtn.style.display = 'none';
+      console.log('[PWA] Last Stand installed to home screen!');
+    }});
+
+    // 4. iOS Safari Add to Home Screen Banner
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    if (isIos && !isStandalone && !localStorage.getItem('laststand_ios_guide_dismissed')) {{
+      setTimeout(() => {{
+        iosGuide.style.display = 'block';
+      }}, 3000);
+    }}
+
+    closeIosBtn.addEventListener('click', () => {{
+      iosGuide.style.display = 'none';
+      localStorage.setItem('laststand_ios_guide_dismissed', 'true');
+    }});
+
+    // 5. Service Worker Registration & Update Pipeline
+    if ('serviceWorker' in navigator) {{
+      window.addEventListener('load', () => {{
+        navigator.serviceWorker.register('sw.js').then((reg) => {{
+          console.log('[PWA] Service Worker active, scope:', reg.scope);
+          
+          reg.addEventListener('updatefound', () => {{
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {{
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {{
+                // New version detected! Show toast
+                updateToast.style.display = 'block';
+              }}
+            }});
+          }});
+        }}).catch((err) => {{
+          console.warn('[PWA] Service worker registration error:', err);
+        }});
+      }});
+
+      updateToast.addEventListener('click', () => {{
+        window.location.reload();
+      }});
+    }}
+
+    // 6. Launch Godot Engine
+    (function () {{
+      engine.startGame({{
+        'onProgress': function (current, total) {{
+          if (total > 0) {{
+            const pct = Math.floor((current / total) * 100);
+            loaderFill.style.width = pct + '%';
+            loaderText.innerText = 'CALIBRATING SENSORS... ' + pct + '%';
+          }} else {{
+            loaderText.innerText = 'INITIALIZING OPERATIVE UPLINK...';
+          }}
+        }},
+      }}).then(() => {{
+        loaderText.innerText = 'SECTOR LINK ONLINE';
+        setTimeout(() => {{
+          loaderOverlay.classList.add('fade-out');
+        }}, 400);
+      }}).catch((err) => {{
+        console.error('Godot startup error:', err);
+        loaderText.innerText = 'INITIALIZATION ERROR: ' + (err.message || err);
+        loaderText.style.color = '#ef4444';
+      }});
+    }}());
+  </script>
+</body>
+</html>
+"""
+    with open(index_path, "w") as f:
+        f.write(enhanced_html)
+    print("    index.html successfully enhanced.")
+
+def main():
+    export_godot_web()
+    copy_branding_assets()
+    generate_manifest()
+    generate_service_worker()
+    enhance_index_html()
+    print("\n>>> LAST STAND: SIGNAL BREAK WEB BUILD COMPLETED SUCCESSFULLY! <<<")
+    print(f"Build output located at: {WEB_OUT_DIR}")
+
+if __name__ == "__main__":
+    main()

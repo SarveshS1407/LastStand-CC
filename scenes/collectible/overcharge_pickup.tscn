@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://coverchargecell01"]
+[gd_scene format=3 uid="uid://d2trutbpbw7l1"]
 
 [ext_resource type="Script" path="res://scripts/collectible/overcharge_pickup.gd" id="1_overcharge"]
 

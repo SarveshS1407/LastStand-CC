@@ -9,6 +9,7 @@ const FragmentScript = preload("res://scripts/collectible/fragment.gd")
 const ShieldPickupScript = preload("res://scripts/collectible/shield_pickup.gd")
 const OverchargePickupScript = preload("res://scripts/collectible/overcharge_pickup.gd")
 const PlayerScript = preload("res://scripts/player/player.gd")
+const SettingsManagerScript = preload("res://scripts/systems/settings_manager.gd")
 
 var _failures: int = 0
 var _passes: int = 0
@@ -154,6 +155,26 @@ func _run_all_tests() -> void:
 	_assert_true(gm.current_state == GameManagerScript.GameState.VICTORY, "12 cores triggers extraction VICTORY")
 	_assert_true(hud.victory_overlay.visible, "Victory overlay displayed")
 	_assert_true(gm.high_score >= gm.score, "High score record updated and persisted")
+	
+	# ----------------------------------------------------
+	# TEST 8: Mobile Touch Controls & Responsiveness
+	# ----------------------------------------------------
+	print("\n[TEST 8] Verifying Mobile Touch Controls & Responsiveness...")
+	var touch_controls = main.get_node_or_null("TouchControls")
+	_assert_true(touch_controls != null, "TouchControls scene instantiated in main arena")
+	
+	var sm_test = SettingsManagerScript.new()
+	_assert_true(sm_test.has_method("should_show_touch_controls"), "SettingsManager has should_show_touch_controls helper")
+	sm_test.free()
+	
+	# Test touch vector analog movement on player
+	var test_dir := Vector2(0.707, -0.707)
+	player.touch_vector = test_dir
+	player._physics_process(0.016)
+	var expected_vx: float = test_dir.x * player.speed
+	var expected_vy: float = test_dir.y * player.speed
+	_assert_true(absf(player.velocity.x - expected_vx) < 1.0 and absf(player.velocity.y - expected_vy) < 1.0, "Player honors touch_vector analog directional movement")
+	player.touch_vector = Vector2.ZERO
 	
 	# ----------------------------------------------------
 	# FINAL SUMMARY

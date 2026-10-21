@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#143058" stop-opacity="1"/>
+      <stop offset="65%" stop-color="#0e1a32" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0a0f1d" stop-opacity="1"/>
+    </radialGradient>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#ffdc50"/>
+      <stop offset="70%" stop-color="#ff9900"/>
+      <stop offset="100%" stop-color="#ff6600" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a2a4a"/>
+      <stop offset="50%" stop-color="#103860"/>
+      <stop offset="100%" stop-color="#06182c"/>
+    </linearGradient>
+    <filter id="neonCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="url(#bgGlow)"/>
+  <rect x="16" y="16" width="480" height="480" rx="52" fill="none" stroke="#00f0ff" stroke-width="3" stroke-opacity="0.7"/>
+
+  <!-- Circuit lines -->
+  <path d="M 60 256 H 180 M 332 256 H 452 M 256 60 V 160 M 256 352 V 452" stroke="#00f0ff" stroke-width="2" stroke-opacity="0.35"/>
+  <circle cx="180" cy="256" r="4" fill="#00f0ff"/>
+  <circle cx="332" cy="256" r="4" fill="#00f0ff"/>
+
+  <!-- Disruption Pulse Rings -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#00f0ff" stroke-width="3" stroke-opacity="0.4" stroke-dasharray="12 8"/>
+  <circle cx="256" cy="256" r="125" fill="none" stroke="#ffb700" stroke-width="3.5" stroke-opacity="0.6"/>
+  <circle cx="256" cy="256" r="90" fill="none" stroke="#00f0ff" stroke-width="4" stroke-opacity="0.85" filter="url(#neonCyan)"/>
+
+  <!-- Tactical Shield -->
+  <polygon points="256,126 371,186 351,316 256,396 161,316 141,186" fill="url(#shieldGrad)" stroke="#00f0ff" stroke-width="5" filter="url(#neonCyan)"/>
+  <polygon points="256,151 341,201 326,296 256,366 186,296 171,201" fill="#07182c" fill-opacity="0.75" stroke="#ffb700" stroke-width="2.5"/>
+
+  <!-- Golden EMP Core -->
+  <circle cx="256" cy="256" r="55" fill="url(#coreGlow)"/>
+  <polygon points="256,218 294,256 256,294 218,256" fill="#ffe168" stroke="#ffffff" stroke-width="3"/>
+  <circle cx="256" cy="256" r="14" fill="#ffffff"/>
+
+  <!-- Chevron Top -->
+  <polygon points="256,191 280,221 270,221 256,206 242,221 232,221" fill="#00f0ff"/>
+</svg>

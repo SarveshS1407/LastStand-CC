@@ -78,6 +78,15 @@ func _connect_signals() -> void:
 		_player.player_died.connect(_on_player_died)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if (current_state == GameState.GAME_OVER or current_state == GameState.VICTORY or current_state == GameState.BRIEFING):
+		if (event is InputEventScreenTouch and event.pressed) or (event is InputEventMouseButton and event.pressed):
+			if current_state == GameState.BRIEFING:
+				start_match()
+			else:
+				restart_game()
+
+
 func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("restart"):
 		restart_game()

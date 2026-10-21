@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://cshieldpickup01"]
+[gd_scene format=3 uid="uid://bu5v7wrehlbme"]
 
 [ext_resource type="Script" path="res://scripts/collectible/shield_pickup.gd" id="1_shield"]
 

@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/collectible/shield_pickup.tscn" id="6_shield"]
 [ext_resource type="PackedScene" path="res://scenes/collectible/overcharge_pickup.tscn" id="7_overcharge"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="8_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_controls.tscn" id="9_touch"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
 size = Vector2(1600, 32)
@@ -234,3 +235,5 @@ patrol_distance = 200.0
 position = Vector2(800, 520)
 
 [node name="HUD" parent="." instance=ExtResource("8_hud")]
+
+[node name="TouchControls" parent="." instance=ExtResource("9_touch")]

@@ -24,6 +24,7 @@ var current_energy: float = 60.0
 var cooldown_timer: float = 0.0
 var is_dead: bool = false
 var has_overcharge: bool = false
+var touch_vector: Vector2 = Vector2.ZERO
 var _invuln_timer: float = 0.0
 
 @onready var body_visual: Polygon2D = $BodyVisual
@@ -73,6 +74,8 @@ func _handle_movement() -> void:
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if direction == Vector2.ZERO:
 		direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	if direction == Vector2.ZERO and touch_vector != Vector2.ZERO:
+		direction = touch_vector
 		
 	velocity = direction * speed
 	move_and_slide()

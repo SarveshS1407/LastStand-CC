@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="800" height="240">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e182a"/>
+      <stop offset="100%" stop-color="#070b14"/>
+    </linearGradient>
+    <linearGradient id="textCyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="240" rx="16" fill="url(#bg)"/>
+  <rect x="4" y="4" width="792" height="232" rx="12" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-opacity="0.3"/>
+
+  <!-- Embedded Logo Emblem (scaled to 180x180 at x=30, y=30) -->
+  <g transform="translate(30, 30) scale(0.3515)">
+    <circle cx="256" cy="256" r="160" fill="none" stroke="#00f0ff" stroke-width="6" stroke-opacity="0.4" stroke-dasharray="16 10"/>
+    <circle cx="256" cy="256" r="125" fill="none" stroke="#ffb700" stroke-width="7" stroke-opacity="0.6"/>
+    <circle cx="256" cy="256" r="90" fill="none" stroke="#00f0ff" stroke-width="8" stroke-opacity="0.9"/>
+    <polygon points="256,126 371,186 351,316 256,396 161,316 141,186" fill="#103860" stroke="#00f0ff" stroke-width="10"/>
+    <polygon points="256,151 341,201 326,296 256,366 186,296 171,201" fill="#07182c" stroke="#ffb700" stroke-width="5"/>
+    <polygon points="256,218 294,256 256,294 218,256" fill="#ffe168" stroke="#ffffff" stroke-width="6"/>
+    <circle cx="256" cy="256" r="14" fill="#ffffff"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="240" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="62" letter-spacing="4" fill="url(#textCyan)">LAST STAND</text>
+  
+  <line x1="240" y1="126" x2="740" y2="126" stroke="#00f0ff" stroke-width="3" stroke-opacity="0.8"/>
+  <line x1="240" y1="132" x2="600" y2="132" stroke="#ffb700" stroke-width="2" stroke-opacity="0.7"/>
+
+  <text x="242" y="168" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="26" letter-spacing="6" fill="#ffb700">SIGNAL BREAK</text>
+  <text x="500" y="168" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="600" font-size="20" letter-spacing="2" fill="#94a3b8">TACTICAL EMP SURVIVAL</text>
+</svg>

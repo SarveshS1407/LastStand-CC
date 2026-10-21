@@ -11,6 +11,7 @@ var master_volume: float = 1.0
 var sfx_volume: float = 1.0
 var screen_shake_enabled: bool = true
 var is_fullscreen: bool = false
+var touch_controls_mode: int = 0  # 0: Auto, 1: Always On, 2: Always Off
 
 var base_resolution := Vector2i(1600, 900)
 
@@ -28,6 +29,9 @@ func _input(event: InputEvent) -> void:
 
 
 func _apply_window_settings() -> void:
+	if OS.has_feature("web") or OS.has_feature("mobile"):
+		return
+		
 	DisplayServer.window_set_min_size(Vector2i(1024, 576))
 	
 	if is_fullscreen:
@@ -83,6 +87,20 @@ func set_screen_shake(enable: bool) -> void:
 	settings_changed.emit()
 
 
+func set_touch_controls_mode(mode: int) -> void:
+	touch_controls_mode = mode
+	save_settings()
+	settings_changed.emit()
+
+
+func should_show_touch_controls() -> bool:
+	if touch_controls_mode == 1:
+		return true
+	if touch_controls_mode == 2:
+		return false
+	return DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web")
+
+
 func load_settings() -> void:
 	var cfg := ConfigFile.new()
 	var err := cfg.load(SETTINGS_PATH)
@@ -91,6 +109,7 @@ func load_settings() -> void:
 		sfx_volume = cfg.get_value("audio", "sfx_volume", 1.0)
 		screen_shake_enabled = cfg.get_value("graphics", "screen_shake", true)
 		is_fullscreen = cfg.get_value("graphics", "fullscreen", false)
+		touch_controls_mode = cfg.get_value("controls", "touch_controls_mode", 0)
 	set_master_volume(master_volume)
 
 
@@ -100,4 +119,5 @@ func save_settings() -> void:
 	cfg.set_value("audio", "sfx_volume", sfx_volume)
 	cfg.set_value("graphics", "screen_shake", screen_shake_enabled)
 	cfg.set_value("graphics", "fullscreen", is_fullscreen)
+	cfg.set_value("controls", "touch_controls_mode", touch_controls_mode)
 	cfg.save(SETTINGS_PATH)

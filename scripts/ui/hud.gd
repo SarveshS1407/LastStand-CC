@@ -133,7 +133,7 @@ func show_game_over(score: int, high_score: int, cores: int, total_cores: int, t
 	var secs := int(time) % 60
 	var is_new_record := score > high_score and score > 0
 	var record_str := "★ NEW BEST RECORD! ★\n" if is_new_record else ""
-	game_over_summary.text = "%sCORES SECURED: %d / %d\nTIME SURVIVED: %02d:%02d\nFINAL SCORE: %d\nRECORD BEST: %d\n\nPRESS [ R ] TO RETRY   •   ESC: MENU" % [record_str, cores, total_cores, mins, secs, score, maxi(score, high_score)]
+	game_over_summary.text = "%sCORES SECURED: %d / %d\nTIME SURVIVED: %02d:%02d\nFINAL SCORE: %d\nRECORD BEST: %d\n\nTAP SCREEN OR PRESS [ R ] TO RETRY   •   ESC: MENU" % [record_str, cores, total_cores, mins, secs, score, maxi(score, high_score)]
 
 
 func show_victory(score: int, high_score: int, cores: int, time: float) -> void:
@@ -143,7 +143,7 @@ func show_victory(score: int, high_score: int, cores: int, time: float) -> void:
 	var secs := int(time) % 60
 	var is_new_record := score > high_score and score > 0
 	var record_str := "★ NEW BEST RECORD! ★\n" if is_new_record else ""
-	victory_summary.text = "%sALL %d CORES SECURED!\nMISSION TIME: %02d:%02d\nFINAL SCORE: %d\nRECORD BEST: %d\n\nPRESS [ R ] TO PLAY AGAIN   •   ESC: MENU" % [record_str, cores, mins, secs, score, maxi(score, high_score)]
+	victory_summary.text = "%sALL %d CORES SECURED!\nMISSION TIME: %02d:%02d\nFINAL SCORE: %d\nRECORD BEST: %d\n\nTAP SCREEN OR PRESS [ R ] TO PLAY AGAIN   •   ESC: MENU" % [record_str, cores, mins, secs, score, maxi(score, high_score)]
 
 
 func hide_all_overlays() -> void:

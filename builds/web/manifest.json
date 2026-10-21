@@ -1,0 +1,39 @@
+{
+  "name": "Last Stand: Signal Break",
+  "short_name": "LastStand",
+  "description": "Tactical top-down sci-fi survival arcade game. Collect energy cores, manage EMP disruption pulses, and outlast the drone defense network.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "fullscreen", "minimal-ui"],
+  "orientation": "landscape",
+  "theme_color": "#0a0f1d",
+  "background_color": "#0a0f1d",
+  "categories": ["games", "arcade", "action"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
